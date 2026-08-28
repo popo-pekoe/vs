@@ -99,7 +99,7 @@ const CATEGORIES_EN = [
 const TIE_TOLERANCE_MS = 200;
 const PENALTY_SECONDS = 5;
 
-// カードサイズのパーセンテージ定義 (10%に縮小)
+// カードサイズの定義 (10%)
 const CARD_SIZE_PERCENT = 10;
 const TEXT_COLORS = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-orange-500', 'text-purple-500', 'text-pink-500'];
 
@@ -108,8 +108,8 @@ export default function App() {
   const [isEnglishMode, setIsEnglishMode] = useState(false);
   const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5 });
   
-  const [cards, setCards] = useState([]); // 画面に出ているカード
-  const [cardPool, setCardPool] = useState([]); // 補充用のプール
+  const [cards, setCards] = useState([]); 
+  const [cardPool, setCardPool] = useState([]);
   const [scores, setScores] = useState({ 1: 0, 2: 0 }); 
   const [currentTarget, setCurrentTarget] = useState(null);
   
@@ -121,6 +121,17 @@ export default function App() {
   const [p2Penalty, setP2Penalty] = useState(false);
   const [p1PenaltyCount, setP1PenaltyCount] = useState(0);
   const [p2PenaltyCount, setP2PenaltyCount] = useState(0);
+
+  // 非同期処理の中で最新のStateを参照するためのRef
+  const cardsRef = useRef([]);
+  const cardPoolRef = useRef([]);
+  const scoresRef = useRef({ 1: 0, 2: 0 });
+  const isQuestioningRef = useRef(false);
+
+  useEffect(() => { cardsRef.current = cards; }, [cards]);
+  useEffect(() => { cardPoolRef.current = cardPool; }, [cardPool]);
+  useEffect(() => { scoresRef.current = scores; }, [scores]);
+  useEffect(() => { isQuestioningRef.current = isQuestioning; }, [isQuestioning]);
 
   const tieTimerRef = useRef(null);
   const firstTapPlayerRef = useRef(null);
@@ -145,8 +156,6 @@ export default function App() {
       if (!validEnCats.includes(settings.category)) {
         setSettings(prev => ({ ...prev, category: 'alphabet' }));
       }
-    } else {
-       // 英語モードから戻った時は、何もしなくても日本語カテゴリリストが表示される
     }
   }, [isEnglishMode, settings.category]);
 
@@ -154,18 +163,18 @@ export default function App() {
   useEffect(() => {
     if (gameState === 'result' && window.speechSynthesis && !isEnglishMode) {
       setTimeout(() => {
-        if (scores[1] > scores[2]) {
+        if (scoresRef.current[1] > scoresRef.current[2]) {
           const u = new SpeechSynthesisUtterance('あおちーむの、かち！おめでとう！');
           u.rate = 1.1;
           window.speechSynthesis.speak(u);
-        } else if (scores[2] > scores[1]) {
+        } else if (scoresRef.current[2] > scoresRef.current[1]) {
           const u = new SpeechSynthesisUtterance('あかちーむの、かち！おめでとう！');
           u.rate = 1.1;
           window.speechSynthesis.speak(u);
         }
-      }, 500); // 画面遷移から少し待って発声
+      }, 500); 
     }
-  }, [gameState, scores, isEnglishMode]);
+  }, [gameState, isEnglishMode]);
 
   // --- 音声生成ロジック ---
   const stopSpeech = useCallback(() => {
@@ -264,21 +273,17 @@ export default function App() {
 
   // --- 重ならない座標（AABB） ---
   const findSafePosition = (existingCards) => {
-    const marginX = CARD_SIZE_PERCENT + 2; 
-    // タブレット縦の場合、プレイエリアは横長。幅の10%は、高さに対しては約20%程度の比率になる。
-    // 安全のためY方向のマージンを大きめ(22%)に取る。
-    const marginY = 22; 
-    
+    const margin = CARD_SIZE_PERCENT + 2; 
     let x, y;
     let attempts = 0;
     
     const isOverlap = (test_x, test_y) => {
       for (const card of existingCards) {
         if (
-            test_x < card.x + marginX &&
-            test_x + marginX > card.x &&
-            test_y < card.y + marginY &&
-            test_y + marginY > card.y
+            test_x < card.x + margin &&
+            test_x + margin > card.x &&
+            test_y < card.y + margin &&
+            test_y + margin > card.y
         ) {
           return true; 
         }
@@ -287,8 +292,8 @@ export default function App() {
     };
 
     do {
-      x = Math.random() * (100 - marginX);
-      y = Math.random() * (100 - marginY - 2); // 画面下部のはみ出しを防ぐ
+      x = Math.random() * (100 - margin);
+      y = Math.random() * (100 - margin - 5); 
       attempts++;
     } while (isOverlap(x, y) && attempts < 500); 
 
@@ -297,7 +302,7 @@ export default function App() {
 
   // --- ゲーム開始 ---
   const startGame = () => {
-    handleReturnToMenu(); // 一旦タイマー等クリア
+    handleReturnToMenu(); 
     
     if (window.speechSynthesis) {
       const dummy = new SpeechSynthesisUtterance('');
@@ -306,7 +311,6 @@ export default function App() {
     }
 
     const fullPool = generatePool(settings.category);
-    
     let initialCards = [];
     let remainingPool = [...fullPool];
     
@@ -319,9 +323,11 @@ export default function App() {
       initialCards.push({ ...newCard, ...pos, colorClass, borderClass });
     }
 
+    // 全てのステートを確実に初期化
     setCards(initialCards);
     setCardPool(remainingPool);
     setScores({ 1: 0, 2: 0 });
+    scoresRef.current = { 1: 0, 2: 0 }; // Refも即座に同期
     
     setGameState('playing');
     setP1Message('じゅんびしてね...');
@@ -342,18 +348,15 @@ export default function App() {
     let nextCards = [...currentCards];
     let nextPool = [...currentPool];
 
-    if (scores[1] >= settings.targetScore || scores[2] >= settings.targetScore) {
-      setGameState('result');
-      return;
-    }
-
-    // 補充ロジック
-    while (nextCards.length < settings.displayCount && nextPool.length > 0) {
-      const newCard = nextPool.pop();
-      const pos = findSafePosition(nextCards);
-      const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
-      const borderClass = colorClass.replace('text-', 'border-');
-      nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
+    // --- カード一気補充機能 (4枚以下なら設定枚数まで補充) ---
+    if (nextCards.length <= 4 && nextPool.length > 0) {
+        while (nextCards.length < settings.displayCount && nextPool.length > 0) {
+            const newCard = nextPool.pop();
+            const pos = findSafePosition(nextCards);
+            const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
+            const borderClass = colorClass.replace('text-', 'border-');
+            nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
+        }
     }
 
     if (nextCards.length === 0) {
@@ -415,39 +418,42 @@ export default function App() {
   const resolveScore = (players, cardId) => {
     setIsQuestioning(false);
     
+    // 正解した側のみメッセージ表示、相手は空白（ざんねん表示廃止）
     if (players.length > 1) {
       setP1Message('ひきわけ！');
       setP2Message('ひきわけ！');
     } else {
       if (players.includes(1)) {
         setP1Message('せいかい！');
-        setP2Message('ざんねん！');
+        setP2Message(''); 
       } else {
         setP2Message('せいかい！');
-        setP1Message('ざんねん！');
+        setP1Message('');
       }
     }
     
-    const newScores = { ...scores };
+    const newScores = { ...scoresRef.current };
     players.forEach(p => newScores[p] += 1);
     setScores(newScores);
+    scoresRef.current = newScores; // Ref同期
 
-    const remainingCards = cards.filter(c => c.id !== cardId);
+    const remainingCards = cardsRef.current.filter(c => c.id !== cardId);
     setCards(remainingCards);
 
-    if (newScores[1] >= settings.targetScore || newScores[2] >= settings.targetScore || (remainingCards.length === 0 && cardPool.length === 0)) {
+    // 終了判定
+    if (newScores[1] >= settings.targetScore || newScores[2] >= settings.targetScore || (remainingCards.length === 0 && cardPoolRef.current.length === 0)) {
       nextTurnTimerRef.current = setTimeout(() => {
         setGameState('result');
       }, 1500);
     } else {
       nextTurnTimerRef.current = setTimeout(() => {
-        startNextTurn(remainingCards, cardPool, false);
+        startNextTurn(remainingCards, cardPoolRef.current, false);
       }, 1500);
     }
   };
 
   const handleCardTap = (player, cardId) => {
-    if (gameState !== 'playing' || !isQuestioning || !currentTarget) return;
+    if (gameState !== 'playing' || !isQuestioningRef.current || !currentTarget) return;
     if (player === 1 && (p1Penalty || p1PenaltyCount > 0)) return;
     if (player === 2 && (p2Penalty || p2PenaltyCount > 0)) return;
 
@@ -474,10 +480,11 @@ export default function App() {
         setP2Message('おてつき！');
       }
 
-      // 両方おてつき
-      if ((player === 1 && (p2Penalty || p2PenaltyCount > 0)) || 
-          (player === 2 && (p1Penalty || p1PenaltyCount > 0))) {
-        
+      // 両方おてつき (Refを使用して状態確認)
+      const bothPenalized = (player === 1 && (p2Penalty || p2PenaltyCount > 0)) || 
+                            (player === 2 && (p1Penalty || p1PenaltyCount > 0));
+
+      if (bothPenalized) {
         clearTimeout(tieTimerRef.current);
         setIsQuestioning(false);
         setP1Message('');
@@ -496,9 +503,10 @@ export default function App() {
         let p2Finished = false;
 
         const checkNextTurn = () => {
-             if(p1Finished && p2Finished && gameState === 'playing' && !isQuestioning) {
+             // 確実に次のターンへ進む
+             if(p1Finished && p2Finished && gameState === 'playing') {
                  setTimeout(() => {
-                    startNextTurn(cards, cardPool, true);
+                    startNextTurn(cardsRef.current, cardPoolRef.current, true);
                  }, 500);
              }
         }
@@ -540,7 +548,6 @@ export default function App() {
       <div className="min-h-screen w-screen bg-[#0abde3] flex items-center justify-center p-4 md:p-8 select-none font-['Varela_Round','Nunito',sans-serif] touch-manipulation">
         <div className="bg-white/95 rounded-[40px] shadow-2xl w-full max-w-6xl h-full max-h-[900px] flex flex-col md:flex-row overflow-hidden border-8 border-white/50">
           
-          {/* 左サイド: カテゴリ選択 */}
           <div className="w-full md:w-1/3 bg-[#f0f8ff] p-6 flex flex-col border-r-4 border-gray-100">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl md:text-2xl font-black text-gray-700 flex items-center">
@@ -567,15 +574,11 @@ export default function App() {
                 >
                   <span className="mr-3 text-2xl">{cat.icon}</span>
                   {cat.label}
-                  {settings.category === cat.id && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full animate-pulse" />
-                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 右サイド: 詳細設定とスタート */}
           <div className="w-full md:w-2/3 p-8 md:p-12 flex flex-col justify-between bg-white relative">
             <div>
               <h1 className="text-4xl md:text-6xl font-black text-center mb-4 text-[#ff6b6b] drop-shadow-sm">
@@ -681,7 +684,6 @@ export default function App() {
     );
   };
 
-  // --- ゲージ計算 ---
   const p1Ratio = Math.min((scores[1] / settings.targetScore) * 60, 60);
   const p2Ratio = Math.min((scores[2] / settings.targetScore) * 60, 60);
 
@@ -692,14 +694,20 @@ export default function App() {
       <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>
         {p2Message && !p2PenaltyCount && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold rotate-180 animate-bounce">
+            <div 
+              className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold animate-bounce"
+              style={{ transform: 'rotate(180deg)' }} // 確実に相手側に読める向きに反転
+            >
               {p2Message}
             </div>
           </div>
         )}
         {p2PenaltyCount > 0 && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div className="text-[#ff6b6b] text-9xl font-black rotate-180 drop-shadow-2xl">
+            <div 
+              className="text-[#ff6b6b] text-9xl font-black drop-shadow-2xl"
+              style={{ transform: 'rotate(180deg)' }} // カウントダウンも反転
+            >
               {p2PenaltyCount}
             </div>
           </div>
@@ -707,8 +715,7 @@ export default function App() {
         
         <div className="absolute inset-2">
           {cards.map(card => {
-            // ミラーリング計算 (カードの高さを考慮して反転。縦マージン約25%分を引く)
-            const mirroredCard = { ...card, y: 100 - card.y - 25 }; 
+            const mirroredCard = { ...card, y: 100 - card.y - CARD_SIZE_PERCENT }; 
             return <PlayCard key={`p2-${card.id}`} card={mirroredCard} player={2} />
           })}
         </div>
@@ -716,8 +723,6 @@ export default function App() {
 
       {/* --- 中央帯 (スコア＆UIゾーン) --- */}
       <div className="h-16 md:h-20 w-full bg-slate-800 rounded-2xl flex items-center justify-between relative overflow-hidden shrink-0 border-4 border-white shadow-xl px-2">
-        
-        {/* 左端UI */}
         <div className="flex gap-2 z-30">
            <button onClick={handleReturnToMenu} className="bg-gray-200 text-gray-700 p-2 md:px-4 md:py-2 rounded-full font-bold shadow-md flex items-center active:scale-95 text-sm md:text-base">
              <ArrowLeft className="w-5 h-5 md:mr-1" /> <span className="hidden md:inline">もどる</span>
@@ -727,7 +732,6 @@ export default function App() {
            </button>
         </div>
 
-        {/* ゲージ */}
         <div className="flex-1 h-8 md:h-10 mx-4 bg-black/40 rounded-full relative overflow-hidden">
           <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-yellow-300 -translate-x-1/2 z-20 shadow-[0_0_10px_#fde047]" />
           <div 
@@ -744,7 +748,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 右端UI (180度回転) */}
         <div className="flex gap-2 z-30 rotate-180">
            <button onClick={handleReturnToMenu} className="bg-gray-200 text-gray-700 p-2 md:px-4 md:py-2 rounded-full font-bold shadow-md flex items-center active:scale-95 text-sm md:text-base">
              <ArrowLeft className="w-5 h-5 md:mr-1" /> <span className="hidden md:inline">もどる</span>
@@ -782,7 +785,6 @@ export default function App() {
       {/* --- 勝利/リザルト画面 --- */}
       {gameState === 'result' && (
         <div className="absolute inset-0 bg-black/60 z-50 flex flex-col backdrop-blur-sm">
-          
           <div className="flex-1 flex flex-col items-center justify-center rotate-180 p-8 border-b-2 border-white/20">
             <h1 className="text-5xl md:text-7xl font-black mb-6 text-white drop-shadow-lg">
               {scores[2] > scores[1] ? <span className="text-[#ff6b6b]">あかチームの かち！</span> : 
