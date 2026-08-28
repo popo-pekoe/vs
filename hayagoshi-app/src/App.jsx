@@ -1,6 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
+// ====== src/App.jsx の最上部（import文の下）に貼り付けてください ======
+
+// ★ここにカテゴリ一覧のデータを定義します★
+// メニュー画面でボタンを描画するために使います。
+const CATEGORIES = [
+  { id: 'hiragana', icon: '🇯🇵', label: 'ひらがな', color: 'bg-red-400' },
+  { id: 'katakana', icon: '🅰️', label: 'カタカナ', color: 'bg-pink-400' },
+  { id: 'english', icon: '🇺🇸', label: 'えいご', color: 'bg-blue-400' },
+  { id: 'number', icon: '🔟', label: 'すうじ', color: 'bg-green-400' },
+  { id: 'color', icon: '🎨', label: 'いろ', color: 'bg-yellow-400' },
+  { id: 'shape', icon: '⭐', label: 'かたち', color: 'bg-purple-400' },
+  { id: 'mix', icon: '🔄', label: 'ミックス', color: 'bg-slate-400' },
+];
+
+// メニュー UI コードで使っている変数を定義します。
+// カテゴリのリストをそのまま渡します。
+const displayedCategories = CATEGORIES;
+
+// ==============================================================
+
 // --- 辞書データと設定 ---
 const WORD_DICT = {
   hiragana: {

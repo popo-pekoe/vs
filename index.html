@@ -273,17 +273,20 @@ export default function App() {
 
   // --- 重ならない座標（AABB） ---
   const findSafePosition = (existingCards) => {
-    const margin = CARD_SIZE_PERCENT + 2; 
+    const marginX = CARD_SIZE_PERCENT + 2; 
+    // プレイエリアは横長（約3:1）になるため、Y軸のパーセンテージマージンを多めに設定
+    const marginY = (CARD_SIZE_PERCENT + 2) * 2.5; 
+    
     let x, y;
     let attempts = 0;
     
     const isOverlap = (test_x, test_y) => {
       for (const card of existingCards) {
         if (
-            test_x < card.x + margin &&
-            test_x + margin > card.x &&
-            test_y < card.y + margin &&
-            test_y + margin > card.y
+            test_x < card.x + marginX &&
+            test_x + marginX > card.x &&
+            test_y < card.y + marginY &&
+            test_y + marginY > card.y
         ) {
           return true; 
         }
@@ -292,8 +295,8 @@ export default function App() {
     };
 
     do {
-      x = Math.random() * (100 - margin);
-      y = Math.random() * (100 - margin - 5); 
+      x = Math.random() * (100 - marginX);
+      y = Math.random() * (100 - marginY); 
       attempts++;
     } while (isOverlap(x, y) && attempts < 500); 
 
@@ -645,14 +648,18 @@ export default function App() {
 
   // --- カード描画 ---
   const PlayCard = ({ card, player }) => {
+    // プレイヤーによって配置の基準を変える（P1は上から、P2は下から）
+    const positionStyle = player === 1 
+      ? { left: `${card.x}%`, top: `${card.y}%` } 
+      : { left: `${card.x}%`, bottom: `${card.y}%` };
+
     if (card.type === 'color') {
       return (
         <div 
           onClick={() => handleCardTap(player, card.id)}
           className={`absolute rounded-xl shadow-[0_4px_0_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_rgba(0,0,0,0.15)] active:translate-y-1 flex items-center justify-center border-2 border-white ${card.displayClass}`}
           style={{ 
-            left: `${card.x}%`, 
-            top: `${card.y}%`, 
+            ...positionStyle,
             width: `${CARD_SIZE_PERCENT}%`, 
             aspectRatio: '1/1'
           }}
@@ -667,8 +674,7 @@ export default function App() {
         onClick={() => handleCardTap(player, card.id)}
         className={`absolute bg-white rounded-2xl shadow-[0_4px_0_#cbd5e1] border-2 flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_#cbd5e1] active:translate-y-1 hover:scale-105 ${card.borderClass}`}
         style={{ 
-          left: `${card.x}%`, 
-          top: `${card.y}%`, 
+          ...positionStyle,
           width: `${CARD_SIZE_PERCENT}%`, 
           aspectRatio: '1/1'
         }}
@@ -714,10 +720,9 @@ export default function App() {
         )}
         
         <div className="absolute inset-2">
-          {cards.map(card => {
-            const mirroredCard = { ...card, y: 100 - card.y - CARD_SIZE_PERCENT }; 
-            return <PlayCard key={`p2-${card.id}`} card={mirroredCard} player={2} />
-          })}
+          {cards.map(card => (
+            <PlayCard key={`p2-${card.id}`} card={card} player={2} />
+          ))}
         </div>
       </div>
 
