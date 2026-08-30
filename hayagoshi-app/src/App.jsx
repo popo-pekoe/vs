@@ -508,7 +508,58 @@ export default function App() {
     firstTapPlayerRef.current = null;
     
     // --- ハンデ適用処理 ---
-    // (以降は現在のコードのハンデ処理がそのまま続きます。変更不要です)
+    if (settings.p1Handicap > 0) {
+      setP1Penalty(true);
+      setP1Message('ハンデ');
+      setP1PenaltyCount(settings.p1Handicap);
+      clearInterval(p1IntervalRef.current);
+      p1IntervalRef.current = setInterval(() => {
+        setP1PenaltyCount(prev => {
+          if (prev <= 1) {
+            clearInterval(p1IntervalRef.current);
+            setP1Penalty(false);
+            setP1Message('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setP1Penalty(false);
+      setP1Message('');
+      setP1PenaltyCount(0);
+      clearInterval(p1IntervalRef.current);
+    }
+
+    if (settings.p2Handicap > 0) {
+      setP2Penalty(true);
+      setP2Message('ハンデ');
+      setP2PenaltyCount(settings.p2Handicap);
+      clearInterval(p2IntervalRef.current);
+      p2IntervalRef.current = setInterval(() => {
+        setP2PenaltyCount(prev => {
+          if (prev <= 1) {
+            clearInterval(p2IntervalRef.current);
+            setP2Penalty(false);
+            setP2Message('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setP2Penalty(false);
+      setP2Message('');
+      setP2PenaltyCount(0);
+      clearInterval(p2IntervalRef.current);
+    }
+
+    if (!wasPenaltySkip) {
+        playSpeech(target);
+    } else {
+        setTimeout(() => playSpeech(target), 500);
+    }
+  };
 
 
   const resolveScore = (players, cardId) => {
