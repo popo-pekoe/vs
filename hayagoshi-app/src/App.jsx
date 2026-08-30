@@ -1,26 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
-// ====== src/App.jsx の最上部（import文の下）に貼り付けてください ======
-
-// ★ここにカテゴリ一覧のデータを定義します★
-// メニュー画面でボタンを描画するために使います。
-const CATEGORIES = [
-  { id: 'hiragana', icon: '🇯🇵', label: 'ひらがな', color: 'bg-red-400' },
-  { id: 'katakana', icon: '🅰️', label: 'カタカナ', color: 'bg-pink-400' },
-  { id: 'english', icon: '🇺🇸', label: 'えいご', color: 'bg-blue-400' },
-  { id: 'number', icon: '🔟', label: 'すうじ', color: 'bg-green-400' },
-  { id: 'color', icon: '🎨', label: 'いろ', color: 'bg-yellow-400' },
-  { id: 'shape', icon: '⭐', label: 'かたち', color: 'bg-purple-400' },
-  { id: 'mix', icon: '🔄', label: 'ミックス', color: 'bg-slate-400' },
-];
-
-// メニュー UI コードで使っている変数を定義します。
-// カテゴリのリストをそのまま渡します。
-const displayedCategories = CATEGORIES;
-
-// ==============================================================
-
 // --- 辞書データと設定 ---
 const WORD_DICT = {
   hiragana: {
@@ -560,111 +540,103 @@ export default function App() {
   };
 
   // --- メニュー画面描画 ---
-  // ── メニュー画面 ──
   if (gameState === 'menu') {
+    const displayedCategories = isEnglishMode ? CATEGORIES_EN : CATEGORIES_JA;
+
     return (
-      <div className="min-h-screen bg-cyan-400 flex items-center justify-center p-2 sm:p-4">
-        {/* 縦画面(スマホ/iPad縦)では flex-col で上下に、横画面では md:flex-row で左右に並べます */}
-        <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 w-full max-w-4xl shadow-xl flex flex-col md:flex-row gap-4 md:gap-8 max-h-[98vh] overflow-y-auto">
+      <div className="min-h-screen w-screen bg-[#0abde3] flex items-center justify-center p-4 md:p-8 select-none font-sans touch-manipulation">
+        <div className="bg-white/95 rounded-[40px] shadow-2xl w-full max-w-6xl h-full max-h-[900px] flex flex-col md:flex-row overflow-hidden border-8 border-white/50">
           
-          {/* ===== 左側（縦画面では上段）：カテゴリ ===== */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg md:text-xl font-bold text-slate-700">
-                {isEnglishMode ? 'Categories' : 'なにであそぶ？'}
+          <div className="w-full md:w-1/3 bg-[#f0f8ff] p-6 flex flex-col border-r-4 border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl md:text-2xl font-black text-gray-700 flex items-center">
+                🎈 {isEnglishMode ? 'Categories' : 'なにであそぶ？'}
               </h2>
               <button 
                 onClick={() => setIsEnglishMode(!isEnglishMode)}
-                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full text-xs md:text-sm font-semibold transition-colors"
+                className={`px-4 py-2 rounded-full font-bold text-sm transition-colors shadow-sm active:scale-95 ${isEnglishMode ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 {isEnglishMode ? '日本語' : 'English Mode'}
               </button>
             </div>
             
-            {/* カテゴリボタンを縦画面では2列にして高さをコンパクトに */}
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-2 flex-1 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
               {displayedCategories.map(cat => (
                 <button
                   key={cat.id}
-                  onClick={() => setSettings(prev => ({ ...prev, category: cat.id }))}
-                  className={`relative p-2 md:p-3 rounded-xl text-left font-bold text-sm md:text-base transition-all shadow-sm active:scale-95 flex items-center gap-2 ${
+                  onClick={() => setSettings({ ...settings, category: cat.id })}
+                  className={`relative px-6 py-4 rounded-2xl font-black text-xl md:text-2xl text-left transition-all ${
                     settings.category === cat.id 
-                      ? `${cat.color} text-white shadow-md transform scale-[1.02]` 
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      ? `${cat.color} text-white shadow-[0_6px_0_rgba(0,0,0,0.2)] translate-y-[-2px]` 
+                      : 'bg-white text-gray-600 shadow-[0_4px_0_#e2e8f0] hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-lg md:text-2xl">{cat.icon}</span>
+                  <span className="mr-3 text-2xl">{cat.icon}</span>
                   {cat.label}
-                  {settings.category === cat.id && (
-                    <div className="absolute right-2 md:right-3 w-2 h-2 md:w-3 md:h-3 bg-white rounded-full"></div>
-                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ===== 右側（縦画面では下段）：設定とスタート ===== */}
-          <div className="flex-1 flex flex-col justify-center gap-4 md:gap-6 bg-slate-50 rounded-xl md:rounded-2xl p-4 md:p-6">
-            <div className="text-center space-y-2 md:space-y-4">
-              <h1 className="text-2xl md:text-4xl font-black text-red-500 tracking-wider">
-                {isEnglishMode ? 'QUICK TOUCH!' : 'はやおし タッチ！'}
+          <div className="w-full md:w-2/3 p-8 md:p-12 flex flex-col justify-between bg-white relative">
+            <div>
+              <h1 className="text-4xl md:text-6xl font-black text-center mb-4 text-[#ff6b6b] drop-shadow-sm">
+                はやおし タッチ！
               </h1>
-              <p className="text-xs md:text-sm text-slate-500 font-medium">
-                {isEnglishMode ? 'Listen and touch quickly!' : 'おとをきいて、はやくタッチしよう！'}
+              <p className="text-center text-gray-500 font-bold mb-10">
+                おとをきいて、はやく タッチしよう！
               </p>
-            </div>
 
-            <div className="space-y-4 w-full max-w-xs mx-auto">
-              {/* 表示枚数設定 */}
-              <div>
-                <label className="block text-center text-xs md:text-sm font-bold text-slate-600 mb-2">
-                  {isEnglishMode ? 'Cards on screen' : 'がめんにだす まいすう'}
-                </label>
-                <div className="flex gap-2">
-                  {[6, 8, 10].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setSettings(prev => ({ ...prev, displayCount: num }))}
-                      className={`flex-1 py-2 rounded-lg font-bold text-sm md:text-base transition-colors ${
-                        settings.displayCount === num ? 'bg-teal-500 text-white' : 'bg-white text-slate-600 shadow-sm'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
+              <div className="space-y-8 max-w-lg mx-auto">
+                <div className="bg-gray-50 p-6 rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-xl font-bold text-gray-700 mb-4 text-center">がめんに だす まいすう</h3>
+                  <div className="flex gap-4">
+                    {[6, 8, 10].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setSettings({ ...settings, displayCount: num })}
+                        className={`flex-1 py-3 rounded-2xl font-black text-xl transition-all ${
+                          settings.displayCount === num 
+                            ? 'bg-[#1dd1a1] text-white shadow-[0_4px_0_#10ac84]' 
+                            : 'bg-white text-gray-500 shadow-[0_4px_0_#e2e8f0]'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-6 rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-xl font-bold text-gray-700 mb-4 text-center">ゴール (なんまいとる？)</h3>
+                  <div className="flex gap-4">
+                    {[5, 10, 15].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setSettings({ ...settings, targetScore: num })}
+                        className={`flex-1 py-3 rounded-2xl font-black text-xl transition-all ${
+                          settings.targetScore === num 
+                            ? 'bg-[#ff9f43] text-white shadow-[0_4px_0_#ee5253]' 
+                            : 'bg-white text-gray-500 shadow-[0_4px_0_#e2e8f0]'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {/* ゴール枚数設定 */}
-              <div>
-                <label className="block text-center text-xs md:text-sm font-bold text-slate-600 mb-2">
-                  {isEnglishMode ? 'Goal (Cards to win)' : 'ゴール（なんまいとる？）'}
-                </label>
-                <div className="flex gap-2">
-                  {[5, 10, 15].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setSettings(prev => ({ ...prev, targetScore: num }))}
-                      className={`flex-1 py-2 rounded-lg font-bold text-sm md:text-base transition-colors ${
-                        settings.targetScore === num ? 'bg-orange-400 text-white' : 'bg-white text-slate-600 shadow-sm'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            <button
-              onClick={startGame}
-              className="mt-2 md:mt-4 w-full bg-red-500 hover:bg-red-600 text-white text-xl md:text-2xl font-black py-3 md:py-4 rounded-xl md:rounded-2xl shadow-[0_4px_0_rgb(185,28,28)] active:shadow-[0_0px_0_rgb(185,28,28)] active:translate-y-1 transition-all flex items-center justify-center gap-2"
-            >
-              <Play className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" />
-              {isEnglishMode ? 'START!' : 'スタート！'}
-            </button>
+            <div className="flex justify-center mt-8">
+              <button 
+                onClick={startGame}
+                className="w-full max-w-md py-6 bg-[#ff6b6b] text-white rounded-[32px] text-4xl font-black shadow-[0_10px_0_#ee5253] active:shadow-[0_0px_0_#ee5253] active:translate-y-[10px] transition-all flex items-center justify-center hover:bg-[#ff5252]"
+              >
+                <Play className="w-10 h-10 mr-4 fill-white" /> スタート！
+              </button>
+            </div>
           </div>
-
         </div>
       </div>
     );
