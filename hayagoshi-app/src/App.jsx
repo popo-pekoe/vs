@@ -1,4 +1,4 @@
-// Version: 1.04
+// Version: 1.05
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -108,6 +108,8 @@ const TEXT_COLORS = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-or
 export default function App() {
   const [gameState, setGameState] = useState('menu'); 
   const [isEnglishMode, setIsEnglishMode] = useState(false);
+  // ▼ ハンデ用の初期値を追加して上書き ▼
+  const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5, p1Handicap: 0, p2Handicap: 0 });
   const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5 });
   
   const [cards, setCards] = useState([]); 
@@ -185,65 +187,74 @@ export default function App() {
     }
   }, []);
 
+  
+  // --- 音声生成ロジック ---
+  const stopSpeech = useCallback(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
   const playSpeech = useCallback((card, isRepeat = false) => {
     if (!card) return;
     stopSpeech();
 
-    const utterance = new SpeechSynthesisUtterance();
-    const useEnglish = isEnglishMode || card.type === 'alphabet';
+    // 英語モード、または日本語モードだけど「えいご」パネルの場合
+    const isEnglishCard = isEnglishMode || card.type === 'alphabet';
 
-    if (useEnglish) {
-      utterance.lang = 'en-US';
-      utterance.rate = 0.8;
-      utterance.pitch = 1.2; 
-      let text = isRepeat ? 'Again. ' : 'Ready... ';
-      
-      switch (card.type) {
-        case 'alphabet':
-          const words = WORD_DICT.alphabet[card.char];
-          text += `${card.char}... ${words.join(', ')}.`;
-          break;
-        case 'number':
-          text += `${card.char}.`;
-          break;
-        case 'color':
-        case 'shape':
-          text += `${card.speechEn}.`;
-          break;
-        default:
-          text += `${card.char}.`;
+    if (isEnglishCard) {
+      // 1. まず掛け声を喋る（モードに合わせて言語を変える）
+      const preamble = new SpeechSynthesisUtterance();
+      if (isEnglishMode) {
+        preamble.lang = 'en-US';
+        preamble.text = isRepeat ? 'Again. ' : 'Ready... ';
+        preamble.rate = 0.8;
+      } else {
+        preamble.lang = 'ja-JP';
+        preamble.text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
+        preamble.rate = 0.95;
       }
-      utterance.text = text;
+      window.speechSynthesis.speak(preamble);
+
+      // 2. 続けてネイティブの英語を発音する
+      const mainSpeech = new SpeechSynthesisUtterance();
+      mainSpeech.lang = 'en-US'; // 確実にネイティブエンジンを指定
+      mainSpeech.rate = 0.8;
+      mainSpeech.pitch = 1.2;
+      
+      let text = '';
+      if (card.type === 'alphabet') {
+        const words = WORD_DICT.alphabet[card.char];
+        text = `${card.char}... ${words.join(', ')}.`;
+      } else if (card.type === 'number') {
+        text = `${card.char}.`;
+      } else if (card.type === 'color' || card.type === 'shape') {
+        text = `${card.speechEn}.`;
+      }
+      mainSpeech.text = text;
+      
+      // 掛け声のあとに連続して再生されるように予約
+      window.speechSynthesis.speak(mainSpeech);
+
     } else {
+      // 純粋な日本語パネルの時
+      const utterance = new SpeechSynthesisUtterance();
       utterance.lang = 'ja-JP';
       utterance.rate = 0.95;
       utterance.pitch = 1.1;
       let text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
       
-      switch (card.type) {
-        case 'hiragana':
-        case 'katakana':
-          text += `${card.word}、の、${card.char}`;
-          break;
-        case 'alphabet': 
-          const wordsJa = WORD_DICT.alphabet[card.char];
-          text += `${card.char}。${wordsJa[0]}。`; 
-          break;
-        case 'number':
-          text += `${card.char}`;
-          break;
-        case 'color':
-        case 'shape':
-          text += `${card.speechJa}`;
-          break;
-        default:
-          text = '';
+      if (card.type === 'hiragana' || card.type === 'katakana') {
+        text += `${card.word}、の、${card.char}`;
+      } else if (card.type === 'number') {
+        text += `${card.char}`;
+      } else if (card.type === 'color' || card.type === 'shape') {
+        text += `${card.speechJa}`;
       }
       utterance.text = text;
+      window.speechSynthesis.speak(utterance);
     }
-    window.speechSynthesis.speak(utterance);
   }, [isEnglishMode, stopSpeech]);
-
 
   // --- プール生成ロジック ---
   const generatePool = useCallback((category) => {
@@ -388,37 +399,90 @@ export default function App() {
     }
   };
 
-  const startPenaltyCountdown = () => {
-    if (p1Penalty) {
-      setP1PenaltyCount(PENALTY_SECONDS);
+ 
+// --- 次のターン開始（補充とハンデ適用） ---
+  const startNextTurn = (currentCards, currentPool, wasPenaltySkip = false) => {
+    let nextCards = [...currentCards];
+    let nextPool = [...currentPool];
+
+    if (nextCards.length <= 4 && nextPool.length > 0) {
+        while (nextCards.length < settings.displayCount && nextPool.length > 0) {
+            const newCard = nextPool.pop();
+            const pos = findSafePosition(nextCards);
+            const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
+            const borderClass = colorClass.replace('text-', 'border-');
+            nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
+        }
+    }
+
+    if (nextCards.length === 0) {
+      setGameState('result');
+      return;
+    }
+
+    setCards(nextCards);
+    setCardPool(nextPool);
+
+    const target = nextCards[Math.floor(Math.random() * nextCards.length)];
+    setCurrentTarget(target);
+    setIsQuestioning(true);
+    firstTapPlayerRef.current = null;
+    
+    // --- ハンデ適用処理 ---
+    if (settings.p1Handicap > 0) {
+      setP1Penalty(true);
+      setP1Message('ハンデ');
+      setP1PenaltyCount(settings.p1Handicap);
       clearInterval(p1IntervalRef.current);
       p1IntervalRef.current = setInterval(() => {
         setP1PenaltyCount(prev => {
           if (prev <= 1) {
             clearInterval(p1IntervalRef.current);
-            setP1Penalty(false); 
+            setP1Penalty(false);
+            setP1Message('');
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
+    } else {
+      setP1Penalty(false);
+      setP1Message('');
+      setP1PenaltyCount(0);
+      clearInterval(p1IntervalRef.current);
     }
 
-    if (p2Penalty) {
-      setP2PenaltyCount(PENALTY_SECONDS);
+    if (settings.p2Handicap > 0) {
+      setP2Penalty(true);
+      setP2Message('ハンデ');
+      setP2PenaltyCount(settings.p2Handicap);
       clearInterval(p2IntervalRef.current);
       p2IntervalRef.current = setInterval(() => {
         setP2PenaltyCount(prev => {
           if (prev <= 1) {
             clearInterval(p2IntervalRef.current);
-            setP2Penalty(false); 
+            setP2Penalty(false);
+            setP2Message('');
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
+    } else {
+      setP2Penalty(false);
+      setP2Message('');
+      setP2PenaltyCount(0);
+      clearInterval(p2IntervalRef.current);
+    }
+
+    if (!wasPenaltySkip) {
+        playSpeech(target);
+    } else {
+        setTimeout(() => playSpeech(target), 500);
     }
   };
+
+
 
   const resolveScore = (players, cardId) => {
     setIsQuestioning(false);
@@ -594,9 +658,9 @@ const handleCardTap = (player, cardId) => {
           {/* 右メニュー（設定・スタート） */}
           <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
             
-            {/* ▼ バージョン表記 (v1.04) ▼ */}
+            {/* ▼ バージョン表記 (v1.05) ▼ */}
             <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
-              v1.04
+              v1.05
             </div>
 
             <div className="mb-4 lg:mb-0">
@@ -645,6 +709,53 @@ const handleCardTap = (player, cardId) => {
                     ))}
                   </div>
                 </div>
+
+{/* --- ハンデ設定 --- */}
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">ハンデ (毎ターン待機)</h3>
+                  <div className="flex flex-col gap-2 lg:gap-4">
+                    {/* あお(下)チーム ハンデ */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#3498db] text-right">あお(下):</span>
+                      <div className="flex-1 flex gap-1 lg:gap-2">
+                        {[0, 1, 2, 3].map(num => (
+                          <button
+                            key={`p1-han-${num}`}
+                            onClick={() => setSettings({ ...settings, p1Handicap: num })}
+                            className={`flex-1 py-1 lg:py-2 rounded-lg lg:rounded-xl font-bold text-sm lg:text-lg transition-all ${
+                              settings.p1Handicap === num 
+                                ? 'bg-[#3498db] text-white shadow-[0_3px_0_#2980b9]' 
+                                : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0]'
+                            }`}
+                          >
+                            {num}秒
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* あか(上)チーム ハンデ */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#ff6b6b] text-right">あか(上):</span>
+                      <div className="flex-1 flex gap-1 lg:gap-2">
+                        {[0, 1, 2, 3].map(num => (
+                          <button
+                            key={`p2-han-${num}`}
+                            onClick={() => setSettings({ ...settings, p2Handicap: num })}
+                            className={`flex-1 py-1 lg:py-2 rounded-lg lg:rounded-xl font-bold text-sm lg:text-lg transition-all ${
+                              settings.p2Handicap === num 
+                                ? 'bg-[#ff6b6b] text-white shadow-[0_3px_0_#ee5253]' 
+                                : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0]'
+                            }`}
+                          >
+                            {num}秒
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
               </div>
             </div>
 
