@@ -94,7 +94,7 @@ const CATEGORIES_JA = [
   { id: 'number', label: 'すうじ', icon: '1️⃣', color: 'bg-amber-400' },
   { id: 'color', label: 'いろ', icon: '🎨', color: 'bg-pink-400' },
   { id: 'shape', label: 'かたち', icon: '⭐', color: 'bg-violet-400' },
-  { id: 'mix', label: 'ミックス', icon: '⚡', color: 'bg-fuchsia-400' }
+  { id: 'mix', label: 'ミックス', icon: '⚡', color: 'bg-fuchsia-400' },
   { id: 'color_char', label: 'いろ×もじ (むずかしい)', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
