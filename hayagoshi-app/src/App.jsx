@@ -110,7 +110,7 @@ export default function App() {
   const [isEnglishMode, setIsEnglishMode] = useState(false);
   // ▼ ハンデ用の初期値を追加して上書き ▼
   const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5, p1Handicap: 0, p2Handicap: 0 });
-  const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5 });
+
   
   const [cards, setCards] = useState([]); 
   const [cardPool, setCardPool] = useState([]);
@@ -180,12 +180,6 @@ export default function App() {
     }
   }, [gameState, isEnglishMode]);
 
-  // --- 音声生成ロジック ---
-  const stopSpeech = useCallback(() => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-  }, []);
 
   
   // --- 音声生成ロジック ---
@@ -359,47 +353,6 @@ export default function App() {
     }, 2000);
   };
 
-  // --- 次のターン開始（補充） ---
-  const startNextTurn = (currentCards, currentPool, wasPenaltySkip = false) => {
-    let nextCards = [...currentCards];
-    let nextPool = [...currentPool];
-
-    // --- カード一気補充機能 (ディーラー: 4枚以下なら設定枚数まで補充) ---
-    if (nextCards.length <= 4 && nextPool.length > 0) {
-        while (nextCards.length < settings.displayCount && nextPool.length > 0) {
-            const newCard = nextPool.pop();
-            const pos = findSafePosition(nextCards);
-            const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
-            const borderClass = colorClass.replace('text-', 'border-');
-            nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
-        }
-    }
-
-    if (nextCards.length === 0) {
-      setGameState('result');
-      return;
-    }
-
-    setCards(nextCards);
-    setCardPool(nextPool);
-
-    const target = nextCards[Math.floor(Math.random() * nextCards.length)];
-    setCurrentTarget(target);
-    setP1Message('');
-    setP2Message('');
-    setIsQuestioning(true);
-    firstTapPlayerRef.current = null;
-    
-    startPenaltyCountdown();
-
-    if (!wasPenaltySkip) {
-        playSpeech(target);
-    } else {
-        setTimeout(() => playSpeech(target), 500);
-    }
-  };
-
- 
 // --- 次のターン開始（補充とハンデ適用） ---
   const startNextTurn = (currentCards, currentPool, wasPenaltySkip = false) => {
     let nextCards = [...currentCards];
