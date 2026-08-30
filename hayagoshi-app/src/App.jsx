@@ -1,10 +1,7 @@
-// Version: 1.01
+// Version: 1.02
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
-// (以下略)
-// 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
+
 
 // --- 辞書データと設定 ---
 const WORD_DICT = {
@@ -595,7 +592,7 @@ const handleCardTap = (player, cardId) => {
           <div className="w-full md:w-2/3 p-8 md:p-12 flex flex-col justify-between bg-white relative">
           {/* ▼▼▼ バージョン表記を追加 ▼▼▼ */}
             <div className="absolute bottom-4 right-6 text-sm font-bold text-gray-400 select-none">
-              v1.01
+              v1.02
             </div>
             {/* ▲▲▲ ここまで ▲▲▲ */}
             <div>
@@ -710,25 +707,21 @@ const handleCardTap = (player, cardId) => {
 
   return (
     <div className="h-screen w-screen bg-[#0abde3] flex flex-col overflow-hidden select-none font-sans touch-manipulation p-2 md:p-4 gap-2">
-      
       {/* --- P2 (上側・赤) エリア --- */}
       <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>
         {p2Message && !p2PenaltyCount && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div 
-              className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold animate-bounce"
-              style={{ transform: 'rotate(180deg)' }}
-            >
-              {p2Message}
+            {/* 回転用とアニメーション用のdivを分離して上書きを防ぐ */}
+            <div className="rotate-180">
+              <div className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold animate-bounce">
+                {p2Message}
+              </div>
             </div>
           </div>
         )}
         {p2PenaltyCount > 0 && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div 
-              className="text-[#ff6b6b] text-9xl font-black drop-shadow-2xl"
-              style={{ transform: 'rotate(180deg)' }}
-            >
+            <div className="text-[#ff6b6b] text-9xl font-black drop-shadow-2xl rotate-180">
               {p2PenaltyCount}
             </div>
           </div>
