@@ -1,4 +1,4 @@
-// Version: 1.02
+// Version: 1.04
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -550,71 +550,75 @@ const handleCardTap = (player, cardId) => {
     }
   };
 
-  // --- メニュー画面描画 ---
+ // --- メニュー画面描画 ---
   if (gameState === 'menu') {
     const displayedCategories = isEnglishMode ? CATEGORIES_EN : CATEGORIES_JA;
 
     return (
-      <div className="min-h-screen w-screen bg-[#0abde3] flex items-center justify-center p-4 md:p-8 select-none font-sans touch-manipulation">
-        <div className="bg-white/95 rounded-[40px] shadow-2xl w-full max-w-6xl h-full max-h-[900px] flex flex-col md:flex-row overflow-hidden border-8 border-white/50">
+      <div className="min-h-screen w-screen bg-[#0abde3] flex items-center justify-center p-2 sm:p-4 select-none font-sans touch-manipulation">
+        {/* max-h-[95vh] と overflow-y-auto で、どんな画面サイズでも確実にはみ出さずスクロール可能にします */}
+        <div className="bg-white/95 rounded-[30px] shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col lg:flex-row overflow-y-auto border-4 lg:border-8 border-white/50">
           
-          <div className="w-full md:w-1/3 bg-[#f0f8ff] p-6 flex flex-col border-r-4 border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl md:text-2xl font-black text-gray-700 flex items-center">
+          {/* 左メニュー（カテゴリ）: 縦画面では上に配置し、2列にして高さを節約 */}
+          <div className="w-full lg:w-1/3 bg-[#f0f8ff] p-4 lg:p-6 flex flex-col border-b-4 lg:border-b-0 lg:border-r-4 border-gray-100 shrink-0">
+            <div className="flex justify-between items-center mb-3 lg:mb-6">
+              <h2 className="text-lg lg:text-2xl font-black text-gray-700 flex items-center">
                 🎈 {isEnglishMode ? 'Categories' : 'なにであそぶ？'}
               </h2>
               <button 
                 onClick={() => setIsEnglishMode(!isEnglishMode)}
-                className={`px-4 py-2 rounded-full font-bold text-sm transition-colors shadow-sm active:scale-95 ${isEnglishMode ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-1 lg:px-4 lg:py-2 rounded-full font-bold text-xs lg:text-sm transition-colors shadow-sm active:scale-95 ${isEnglishMode ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 {isEnglishMode ? '日本語' : 'English Mode'}
               </button>
             </div>
             
-            <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-3 flex-1">
               {displayedCategories.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setSettings({ ...settings, category: cat.id })}
-                  className={`relative px-6 py-4 rounded-2xl font-black text-xl md:text-2xl text-left transition-all ${
+                  className={`relative px-3 py-2 lg:px-6 lg:py-4 rounded-xl lg:rounded-2xl font-black text-sm lg:text-2xl text-left transition-all flex items-center ${
                     settings.category === cat.id 
-                      ? `${cat.color} text-white shadow-[0_6px_0_rgba(0,0,0,0.2)] translate-y-[-2px]` 
-                      : 'bg-white text-gray-600 shadow-[0_4px_0_#e2e8f0] hover:bg-gray-50'
+                      ? `${cat.color} text-white shadow-[0_4px_0_rgba(0,0,0,0.2)] translate-y-[-2px]` 
+                      : 'bg-white text-gray-600 shadow-[0_2px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0] hover:bg-gray-50'
                   }`}
                 >
-                  <span className="mr-3 text-2xl">{cat.icon}</span>
+                  <span className="mr-2 lg:mr-3 text-lg lg:text-2xl">{cat.icon}</span>
                   {cat.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="w-full md:w-2/3 p-8 md:p-12 flex flex-col justify-between bg-white relative">
-          {/* ▼▼▼ バージョン表記を追加 ▼▼▼ */}
-            <div className="absolute bottom-4 right-6 text-sm font-bold text-gray-400 select-none">
-              v1.02
+          {/* 右メニュー（設定・スタート） */}
+          <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
+            
+            {/* ▼ バージョン表記 (v1.04) ▼ */}
+            <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
+              v1.04
             </div>
-            {/* ▲▲▲ ここまで ▲▲▲ */}
-            <div>
-              <h1 className="text-4xl md:text-6xl font-black text-center mb-4 text-[#ff6b6b] drop-shadow-sm">
+
+            <div className="mb-4 lg:mb-0">
+              <h1 className="text-3xl lg:text-6xl font-black text-center mb-2 lg:mb-4 text-[#ff6b6b] drop-shadow-sm">
                 はやおし タッチ！
               </h1>
-              <p className="text-center text-gray-500 font-bold mb-10">
+              <p className="text-xs lg:text-base text-center text-gray-500 font-bold mb-4 lg:mb-10">
                 おとをきいて、はやく タッチしよう！
               </p>
 
-              <div className="space-y-8 max-w-lg mx-auto">
-                <div className="bg-gray-50 p-6 rounded-3xl border-2 border-gray-100">
-                  <h3 className="text-xl font-bold text-gray-700 mb-4 text-center">がめんに だす まいすう</h3>
-                  <div className="flex gap-4">
+              <div className="space-y-4 lg:space-y-8 max-w-lg mx-auto w-full">
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">がめんに だす まいすう</h3>
+                  <div className="flex gap-2 lg:gap-4">
                     {[6, 8, 10].map(num => (
                       <button
                         key={num}
                         onClick={() => setSettings({ ...settings, displayCount: num })}
-                        className={`flex-1 py-3 rounded-2xl font-black text-xl transition-all ${
+                        className={`flex-1 py-2 lg:py-3 rounded-xl lg:rounded-2xl font-black text-base lg:text-xl transition-all ${
                           settings.displayCount === num 
-                            ? 'bg-[#1dd1a1] text-white shadow-[0_4px_0_#10ac84]' 
-                            : 'bg-white text-gray-500 shadow-[0_4px_0_#e2e8f0]'
+                            ? 'bg-[#1dd1a1] text-white shadow-[0_3px_0_#10ac84] lg:shadow-[0_4px_0_#10ac84]' 
+                            : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0]'
                         }`}
                       >
                         {num}
@@ -623,17 +627,17 @@ const handleCardTap = (player, cardId) => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-6 rounded-3xl border-2 border-gray-100">
-                  <h3 className="text-xl font-bold text-gray-700 mb-4 text-center">ゴール (なんまいとる？)</h3>
-                  <div className="flex gap-4">
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">ゴール (なんまいとる？)</h3>
+                  <div className="flex gap-2 lg:gap-4">
                     {[5, 10, 15].map(num => (
                       <button
                         key={num}
                         onClick={() => setSettings({ ...settings, targetScore: num })}
-                        className={`flex-1 py-3 rounded-2xl font-black text-xl transition-all ${
+                        className={`flex-1 py-2 lg:py-3 rounded-xl lg:rounded-2xl font-black text-base lg:text-xl transition-all ${
                           settings.targetScore === num 
-                            ? 'bg-[#ff9f43] text-white shadow-[0_4px_0_#ee5253]' 
-                            : 'bg-white text-gray-500 shadow-[0_4px_0_#e2e8f0]'
+                            ? 'bg-[#ff9f43] text-white shadow-[0_3px_0_#ee5253] lg:shadow-[0_4px_0_#ee5253]' 
+                            : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0]'
                         }`}
                       >
                         {num}
@@ -644,12 +648,12 @@ const handleCardTap = (player, cardId) => {
               </div>
             </div>
 
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-4 lg:mt-8 pb-4 lg:pb-0">
               <button 
                 onClick={startGame}
-                className="w-full max-w-md py-6 bg-[#ff6b6b] text-white rounded-[32px] text-4xl font-black shadow-[0_10px_0_#ee5253] active:shadow-[0_0px_0_#ee5253] active:translate-y-[10px] transition-all flex items-center justify-center hover:bg-[#ff5252]"
+                className="w-full max-w-md py-4 lg:py-6 bg-[#ff6b6b] text-white rounded-2xl lg:rounded-[32px] text-2xl lg:text-4xl font-black shadow-[0_6px_0_#ee5253] lg:shadow-[0_10px_0_#ee5253] active:shadow-none active:translate-y-[6px] lg:active:translate-y-[10px] transition-all flex items-center justify-center hover:bg-[#ff5252]"
               >
-                <Play className="w-10 h-10 mr-4 fill-white" /> スタート！
+                <Play className="w-8 h-8 lg:w-10 lg:h-10 mr-2 lg:mr-4 fill-white" /> スタート！
               </button>
             </div>
           </div>
