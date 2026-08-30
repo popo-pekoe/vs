@@ -455,12 +455,22 @@ export default function App() {
     }
   };
 
-  const handleCardTap = (player, cardId) => {
+const handleCardTap = (player, cardId) => {
     if (gameState !== 'playing' || !isQuestioningRef.current || !currentTarget) return;
     if (player === 1 && (p1Penalty || p1PenaltyCount > 0)) return;
     if (player === 2 && (p2Penalty || p2PenaltyCount > 0)) return;
 
     if (cardId === currentTarget.id) {
+      // 誰かが正解した瞬間に、両者のペナルティを完全リセットして次へ
+      setP1Penalty(false);
+      setP2Penalty(false);
+      setP1PenaltyCount(0);
+      setP2PenaltyCount(0);
+      clearInterval(p1IntervalRef.current);
+      clearInterval(p2IntervalRef.current);
+      setP1Message('');
+      setP2Message('');
+
       if (!firstTapPlayerRef.current) {
         firstTapPlayerRef.current = player;
         tieTimerRef.current = setTimeout(() => {
@@ -473,68 +483,67 @@ export default function App() {
         resolveScore([1, 2], cardId); 
       }
     } else {
+      // --- おてつき時の処理 ---
       if (player === 1) {
         setP1Penalty(true);
         setP1Message('おてつき！');
+        setP1PenaltyCount(PENALTY_SECONDS); // その場ですぐに5秒カウント開始
+        clearInterval(p1IntervalRef.current);
+        p1IntervalRef.current = setInterval(() => {
+          setP1PenaltyCount(prev => {
+            if (prev <= 1) {
+              clearInterval(p1IntervalRef.current);
+              setP1Penalty(false);
+              setP1Message('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
         setP2Penalty(true);
         setP2Message('おてつき！');
+        setP2PenaltyCount(PENALTY_SECONDS);
+        clearInterval(p2IntervalRef.current);
+        p2IntervalRef.current = setInterval(() => {
+          setP2PenaltyCount(prev => {
+            if (prev <= 1) {
+              clearInterval(p2IntervalRef.current);
+              setP2Penalty(false);
+              setP2Message('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
 
+      // 2人とも間違えた場合はペナルティなしで即座に次へ
       const bothPenalized = (player === 1 && (p2Penalty || p2PenaltyCount > 0)) || 
                             (player === 2 && (p1Penalty || p1PenaltyCount > 0));
 
       if (bothPenalized) {
         clearTimeout(tieTimerRef.current);
         setIsQuestioning(false);
-        setP1Message('');
-        setP2Message('');
 
-        setP1Penalty(true);
-        setP2Penalty(true);
-        
+        // 進行中のペナルティを両方ストップしてリセット
+        setP1Penalty(false);
+        setP2Penalty(false);
+        setP1PenaltyCount(0);
+        setP2PenaltyCount(0);
         clearInterval(p1IntervalRef.current);
         clearInterval(p2IntervalRef.current);
         
-        setP1PenaltyCount(PENALTY_SECONDS);
-        setP2PenaltyCount(PENALTY_SECONDS);
-        
-        let p1Finished = false;
-        let p2Finished = false;
+        setP1Message('ドロー！');
+        setP2Message('ドロー！');
 
-        const checkNextTurn = () => {
-             if(p1Finished && p2Finished && gameState === 'playing') {
-                 setTimeout(() => {
-                    startNextTurn(cardsRef.current, cardPoolRef.current, true);
-                 }, 500);
-             }
-        }
-
-        p1IntervalRef.current = setInterval(() => {
-            setP1PenaltyCount(prev => {
-                if(prev <= 1) {
-                    clearInterval(p1IntervalRef.current);
-                    setP1Penalty(false);
-                    p1Finished = true;
-                    checkNextTurn();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        p2IntervalRef.current = setInterval(() => {
-            setP2PenaltyCount(prev => {
-                if(prev <= 1) {
-                    clearInterval(p2IntervalRef.current);
-                    setP2Penalty(false);
-                    p2Finished = true;
-                    checkNextTurn();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        setTimeout(() => {
+           setP1Message('');
+           setP2Message('');
+           if (gameState === 'playing') {
+             startNextTurn(cardsRef.current, cardPoolRef.current, true);
+           }
+        }, 1500);
       }
     }
   };
