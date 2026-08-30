@@ -1,4 +1,4 @@
-// Version: 1.06
+// Version: 1.07
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -69,11 +69,18 @@ const WORD_DICT = {
     { id: 'c_purple', char: 'purple', displayClass: 'bg-purple-500', speechJa: 'むらさき', speechEn: 'Purple' },
   ],
   shape: [
-    { id: 's_circle', char: 'circle', display: '🔴', speechJa: 'まる', speechEn: 'Circle' },
-    { id: 's_triangle', char: 'triangle', display: '🔺', speechJa: 'さんかく', speechEn: 'Triangle' },
-    { id: 's_square', char: 'square', display: '🟥', speechJa: 'しかく', speechEn: 'Square' },
-    { id: 's_star', char: 'star', display: '⭐', speechJa: 'ほし', speechEn: 'Star' },
-    { id: 's_heart', char: 'heart', display: '💖', speechJa: 'ハート', speechEn: 'Heart' },
+    { id: 's_circle', char: 'circle', display: '●', speechJa: 'まる', speechEn: 'Circle' },
+    { id: 's_triangle', char: 'triangle', display: '▲', speechJa: 'さんかく', speechEn: 'Triangle' },
+    { id: 's_square', char: 'square', display: '■', speechJa: 'しかく', speechEn: 'Square' },
+    { id: 's_star', char: 'star', display: '★', speechJa: 'ほし', speechEn: 'Star' },
+    { id: 's_heart', char: 'heart', display: '♥', speechJa: 'ハート', speechEn: 'Heart' },
+    { id: 's_spade', char: 'spade', display: '♠', speechJa: 'スペード', speechEn: 'Spade' },
+    { id: 's_club', char: 'club', display: '♣', speechJa: 'クローバー', speechEn: 'Club' },
+    { id: 's_diamond', char: 'diamond', display: '♦', speechJa: 'ダイヤ', speechEn: 'Diamond' },
+    { id: 's_cloud', char: 'cloud', display: '☁', speechJa: 'くも', speechEn: 'Cloud' },
+    { id: 's_umbrella', char: 'umbrella', display: '☂', speechJa: 'かさ', speechEn: 'Umbrella' },
+    { id: 's_note', char: 'note', display: '♪', speechJa: 'おんぷ', speechEn: 'Music Note' },
+    { id: 's_moon', char: 'moon', display: '☾', speechJa: 'つき', speechEn: 'Moon' },
   ]
 };
 
@@ -95,7 +102,7 @@ const CATEGORIES_JA = [
   { id: 'color', label: 'いろ', icon: '🎨', color: 'bg-pink-400' },
   { id: 'shape', label: 'かたち', icon: '⭐', color: 'bg-violet-400' },
   { id: 'mix', label: 'ミックス', icon: '⚡', color: 'bg-fuchsia-400' },
-  { id: 'color_char', label: 'いろ×もじ (むずかしい)', icon: '🌈', color: 'bg-cyan-500' } // ←追加
+  { id: 'color_shape', label: 'いろ×もじ (むずかしい)', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
 // 英語モードのカテゴリ
@@ -105,7 +112,7 @@ const CATEGORIES_EN = [
   { id: 'color', label: 'Colors', icon: '🎨', color: 'bg-pink-500' },
   { id: 'shape', label: 'Shapes', icon: '⭐', color: 'bg-violet-500' },
   { id: 'mix', label: 'Mix', icon: '⚡', color: 'bg-fuchsia-500' },
-  { id: 'color_char', label: 'Color & Char', icon: '🌈', color: 'bg-cyan-500' } // ←追加
+  { id: 'color_shape', label: 'Color & Shape', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
 // 判定設定
@@ -167,7 +174,7 @@ export default function App() {
   // --- 英語モード切り替え時の自動調整 ---
   useEffect(() => {
     if (isEnglishMode) {
-      const validEnCats = ['alphabet', 'number', 'color', 'shape', 'mix', 'color_char'];
+      const validEnCats = ['alphabet', 'number', 'color', 'shape', 'mix', 'color_shape'];
       if (!validEnCats.includes(settings.category)) {
         setSettings(prev => ({ ...prev, category: 'alphabet' }));
       }
@@ -204,31 +211,15 @@ export default function App() {
     if (!card) return;
     stopSpeech();
 
-    if (card.type === 'color_char_target') {
+    if (card.type === 'color_shape_target') {
       const preamble = new SpeechSynthesisUtterance();
       preamble.lang = 'ja-JP';
       preamble.rate = 0.95;
       preamble.text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
       
-      const mainSpeech = new SpeechSynthesisUtterance();
-      
-      if (card.subType === 'alphabet') {
-        preamble.text += `${card.colorJa}、の、`;
-        window.speechSynthesis.speak(preamble);
-
-        mainSpeech.lang = 'en-US';
-        mainSpeech.rate = 0.8;
-        const words = WORD_DICT.alphabet[card.char];
-        mainSpeech.text = `${card.char}... ${words.join(', ')}.`;
-        window.speechSynthesis.speak(mainSpeech);
-      } else {
-        preamble.text += `${card.colorJa}、の、${card.char}、、、、、`;
-        if (card.subType === 'hiragana' || card.subType === 'katakana') {
-           preamble.text += `${card.word}`;
-        }
-        window.speechSynthesis.speak(preamble);
-      }
-      return; // 新モードの読み上げが終わったらここで終了
+      preamble.text += `${card.colorJa}、の、${card.speechJa}`;
+      window.speechSynthesis.speak(preamble);
+      return; 
     }
 
     // 英語モード、または日本語モードだけど「えいご」パネルの場合
@@ -292,8 +283,8 @@ export default function App() {
   const generatePool = useCallback((category) => {
     let pool = [];
 
-    if (category === 'color_char') {
-       // 新モードは専用にダミーのプール（ターン数分）だけ作る
+      if (category === 'color_shape') {
+         // 新モードは専用にダミーのプール（ターン数分）だけ作る
        for(let i=0; i<100; i++) pool.push({ id: `turn_${i}`, dummy: true });
        return pool;
     }
@@ -398,37 +389,25 @@ export default function App() {
     }, 2000);
   };
 
+
 // --- 新モード用のカード一括生成ロジック ---
-  const generateColorCharBoard = (displayCount) => {
-    const types = ['hiragana', 'katakana', 'alphabet', 'number'];
-    const getRandomChar = () => {
-      const type = types[Math.floor(Math.random() * types.length)];
-      if (type === 'hiragana' || type === 'katakana') {
-        const keys = Object.keys(WORD_DICT[type]);
-        const char = keys[Math.floor(Math.random() * keys.length)];
-        return { type, char, word: WORD_DICT[type][char] };
-      } else if (type === 'alphabet') {
-        const keys = Object.keys(WORD_DICT.alphabet);
-        const char = keys[Math.floor(Math.random() * keys.length)];
-        return { type, char, word: WORD_DICT.alphabet[char][0] };
-      } else {
-        const char = Math.floor(Math.random() * 99) + 1;
-        return { type, char: char.toString(), word: char.toString() };
-      }
+  const generateColorShapeBoard = (displayCount) => {
+    const getRandomShape = () => {
+      const shapeList = WORD_DICT.shape;
+      return shapeList[Math.floor(Math.random() * shapeList.length)];
     };
 
     let nextCards = [];
-    const targetBase = getRandomChar();
+    const targetBase = getRandomShape();
     const targetColor = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
     
     // 正解カード
     const targetCard = {
-      id: `cc_target_${Date.now()}`,
-      type: 'color_char_target',
-      subType: targetBase.type,
+      id: `cs_target_${Date.now()}`,
+      type: 'color_shape_target',
       char: targetBase.char,
-      word: targetBase.word,
-      display: targetBase.char,
+      speechJa: targetBase.speechJa,
+      display: targetBase.display,
       colorJa: targetColor.nameJa,
       colorClass: targetColor.class,
       borderClass: targetColor.class.replace('text-', 'border-')
@@ -441,7 +420,7 @@ export default function App() {
     // 引っかけカードを生成
     while(nextCards.length < displayCount) {
        const distColor = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
-       const distBase = getRandomChar();
+       const distBase = getRandomShape();
        
        if (distColor.id === targetColor.id && distBase.char === targetBase.char) continue;
        
@@ -453,10 +432,10 @@ export default function App() {
        }
 
        const distCard = {
-         id: `cc_dist_${nextCards.length}_${Date.now()}`,
-         type: 'color_char_dist',
+         id: `cs_dist_${nextCards.length}_${Date.now()}`,
+         type: 'color_shape_dist',
          char: finalBase.char,
-         display: finalBase.char,
+         display: finalBase.display,
          colorClass: finalColor.class,
          borderClass: finalColor.class.replace('text-', 'border-')
        };
@@ -474,13 +453,15 @@ export default function App() {
     let nextPool = [...currentPool];
     let target = null; // targetの決定ロジックを分岐させるため変数化
 
-    if (settings.category === 'color_char') {
+    if (settings.category === 'color_shape') {
        // 新モードの場合は毎回盤面を全リセットして新しく生成
-       const generated = generateColorCharBoard(settings.displayCount);
+       const generated = generateColorShapeBoard(settings.displayCount);
        nextCards = generated.board;
        target = generated.target;
        nextPool.pop(); // ターンを消費
     } else {
+
+
        if (nextCards.length <= 4 && nextPool.length > 0) {
            while (nextCards.length < settings.displayCount && nextPool.length > 0) {
                const newCard = nextPool.pop();
