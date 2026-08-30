@@ -104,7 +104,7 @@ const CATEGORIES_EN = [
   { id: 'number', label: 'Numbers', icon: '1️⃣', color: 'bg-amber-500' },
   { id: 'color', label: 'Colors', icon: '🎨', color: 'bg-pink-500' },
   { id: 'shape', label: 'Shapes', icon: '⭐', color: 'bg-violet-500' },
-  { id: 'mix', label: 'Mix', icon: '⚡', color: 'bg-fuchsia-500' }
+  { id: 'mix', label: 'Mix', icon: '⚡', color: 'bg-fuchsia-500' },
   { id: 'color_char', label: 'Color & Char', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
