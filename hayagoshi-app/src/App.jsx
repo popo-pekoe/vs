@@ -1,3 +1,8 @@
+// Version: 1.01
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
+// (以下略)
+// 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -588,6 +593,11 @@ const handleCardTap = (player, cardId) => {
           </div>
 
           <div className="w-full md:w-2/3 p-8 md:p-12 flex flex-col justify-between bg-white relative">
+          {/* ▼▼▼ バージョン表記を追加 ▼▼▼ */}
+            <div className="absolute bottom-4 right-6 text-sm font-bold text-gray-400 select-none">
+              v1.01
+            </div>
+            {/* ▲▲▲ ここまで ▲▲▲ */}
             <div>
               <h1 className="text-4xl md:text-6xl font-black text-center mb-4 text-[#ff6b6b] drop-shadow-sm">
                 はやおし タッチ！
