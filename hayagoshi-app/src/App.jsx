@@ -431,6 +431,10 @@ export default function App() {
            else finalBase = targetBase;   
        }
 
+       // ▼▼▼ ここを追加（盤面に同じ色×形が既にあればスキップ）▼▼▼
+       if (nextCards.some(c => c.char === finalBase.char && c.colorClass === finalColor.class)) continue;
+       // ▲▲▲
+
        const distCard = {
          id: `cs_dist_${nextCards.length}_${Date.now()}`,
          type: 'color_shape_dist',
@@ -717,9 +721,9 @@ const handleCardTap = (player, cardId) => {
           {/* 右メニュー（設定・スタート） */}
           <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
             
-            {/* ▼ バージョン表記 (v1.06) ▼ */}
+            {/* ▼ バージョン表記 (v1.08) ▼ */}
             <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
-              v1.06
+              v1.08
             </div>
 
             <div className="mb-4 lg:mb-0">
@@ -831,10 +835,8 @@ const handleCardTap = (player, cardId) => {
       </div>
     );
   }
-
-  // --- カード描画 ---
+// --- カード描画 ---
   const PlayCard = ({ card, player }) => {
-    // プレイヤーによって配置の基準を変える（P1は上から、P2は下から指定することでY軸を完全に対称にする）
     const positionStyle = player === 1 
       ? { left: `${card.x}%`, top: `${card.y}%` } 
       : { left: `${card.x}%`, bottom: `${card.y}%` };
@@ -842,13 +844,9 @@ const handleCardTap = (player, cardId) => {
     if (card.type === 'color') {
       return (
         <div 
-          onClick={() => handleCardTap(player, card.id)}
-          className={`absolute rounded-2xl shadow-[0_4px_0_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_rgba(0,0,0,0.15)] active:translate-y-1 flex items-center justify-center border-4 border-white ${card.displayClass}`}
-          style={{ 
-            ...positionStyle,
-            width: `${CARD_SIZE_PERCENT}%`, 
-            aspectRatio: '1/1'
-          }}
+          onPointerDown={() => handleCardTap(player, card.id)}
+          className={`absolute rounded-2xl shadow-[0_4px_0_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_rgba(0,0,0,0.15)] active:translate-y-1 flex items-center justify-center border-4 border-white touch-none ${card.displayClass}`}
+          style={{ ...positionStyle, width: `${CARD_SIZE_PERCENT}%`, aspectRatio: '1/1' }}
         />
       );
     }
@@ -857,13 +855,9 @@ const handleCardTap = (player, cardId) => {
     
     return (
       <div 
-        onClick={() => handleCardTap(player, card.id)}
-        className={`absolute bg-white rounded-3xl shadow-[0_4px_0_#cbd5e1] border-2 flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_#cbd5e1] active:translate-y-1 hover:scale-105 ${card.borderClass}`}
-        style={{ 
-          ...positionStyle,
-          width: `${CARD_SIZE_PERCENT}%`, 
-          aspectRatio: '1/1'
-        }}
+        onPointerDown={() => handleCardTap(player, card.id)}
+        className={`absolute bg-white rounded-3xl shadow-[0_4px_0_#cbd5e1] border-2 flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_#cbd5e1] active:translate-y-1 hover:scale-105 touch-none ${card.borderClass}`}
+        style={{ ...positionStyle, width: `${CARD_SIZE_PERCENT}%`, aspectRatio: '1/1' }}
       >
         <div className={`w-full h-full flex items-center justify-center p-1 ${rotationClass}`}>
           {card.type === 'shape' ? (
@@ -880,10 +874,8 @@ const handleCardTap = (player, cardId) => {
   const p2Ratio = Math.min((scores[2] / settings.targetScore) * 60, 60);
 
   return (
-    <div className="h-screen w-screen bg-[#0abde3] flex flex-col overflow-hidden select-none font-sans touch-manipulation p-2 md:p-4 gap-2">
-      {/* --- P2 (上側・赤) エリア --- */}
-      <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>
-        {p2Message && !p2PenaltyCount && (
+    <div className="h-screen w-screen bg-[#0abde3] flex flex-col overflow-hidden select-none font-sans touch-none overscroll-none p-2 md:p-4 gap-2">
+      <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>        {p2Message && !p2PenaltyCount && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
             {/* 回転用とアニメーション用のdivを分離して上書きを防ぐ */}
             <div className="rotate-180">
