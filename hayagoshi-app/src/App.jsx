@@ -1,4 +1,4 @@
-// Version: 1.07
+// Version: 1.10
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -77,8 +77,8 @@ const WORD_DICT = {
     { id: 's_spade', char: 'spade', display: '♠', speechJa: 'スペード', speechEn: 'Spade' },
     { id: 's_club', char: 'club', display: '♣', speechJa: 'クローバー', speechEn: 'Club' },
     { id: 's_diamond', char: 'diamond', display: '♦', speechJa: 'ダイヤ', speechEn: 'Diamond' },
-    { id: 's_cloud', char: 'cloud', display: '☁', speechJa: 'くも', speechEn: 'Cloud' },
-    { id: 's_umbrella', char: 'umbrella', display: '☂', speechJa: 'かさ', speechEn: 'Umbrella' },
+    { id: 's_cloud', char: 'cloud', display: '☁', speechJa: 'くも', speechEn: 'Cloud', fixedColor: true },
+    { id: 's_umbrella', char: 'umbrella', display: '☂', speechJa: 'かさ', speechEn: 'Umbrella', fixedColor: true },
     { id: 's_note', char: 'note', display: '♪', speechJa: 'おんぷ', speechEn: 'Music Note' },
     { id: 's_moon', char: 'moon', display: '☾', speechJa: 'つき', speechEn: 'Moon' },
   ]
@@ -392,13 +392,14 @@ export default function App() {
 
 // --- 新モード用のカード一括生成ロジック ---
   const generateColorShapeBoard = (displayCount) => {
-    const getRandomShape = () => {
-      const shapeList = WORD_DICT.shape;
+    // fixedColor のアイコン（絵文字表示で色が変わらないもの）は色違いを作らない
+    const getRandomShape = (colorableOnly = false) => {
+      const shapeList = colorableOnly ? WORD_DICT.shape.filter(s => !s.fixedColor) : WORD_DICT.shape;
       return shapeList[Math.floor(Math.random() * shapeList.length)];
     };
 
     let nextCards = [];
-    const targetBase = getRandomShape();
+    const targetBase = getRandomShape(true); // 正解は色で区別できるアイコンのみ
     const targetColor = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
     
     // 正解カード
@@ -431,17 +432,21 @@ export default function App() {
            else finalBase = targetBase;   
        }
 
-       // ▼▼▼ ここを追加（盤面に同じ色×形が既にあればスキップ）▼▼▼
-       if (nextCards.some(c => c.char === finalBase.char && c.colorClass === finalColor.class)) continue;
-       // ▲▲▲
+       // 色が変わらないアイコンは盤面に1枚まで（色のバリエーションを作らない）
+       if (finalBase.fixedColor) {
+         if (nextCards.some(c => c.char === finalBase.char)) continue;
+       } else if (nextCards.some(c => c.char === finalBase.char && c.colorClass === finalColor.class)) {
+         // 盤面に同じ色×形が既にあればスキップ
+         continue;
+       }
 
        const distCard = {
          id: `cs_dist_${nextCards.length}_${Date.now()}`,
          type: 'color_shape_dist',
          char: finalBase.char,
          display: finalBase.display,
-         colorClass: finalColor.class,
-         borderClass: finalColor.class.replace('text-', 'border-')
+         colorClass: finalBase.fixedColor ? '' : finalColor.class,
+         borderClass: finalBase.fixedColor ? 'border-gray-300' : finalColor.class.replace('text-', 'border-')
        };
        const pos = findSafePosition(nextCards);
        distCard.x = pos.x;
@@ -721,9 +726,9 @@ const handleCardTap = (player, cardId) => {
           {/* 右メニュー（設定・スタート） */}
           <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
             
-            {/* ▼ バージョン表記 (v1.08) ▼ */}
+            {/* ▼ バージョン表記 (v1.10) ▼ */}
             <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
-              v1.08
+              v1.10
             </div>
 
             <div className="mb-4 lg:mb-0">
@@ -781,7 +786,7 @@ const handleCardTap = (player, cardId) => {
                     <div className="flex items-center gap-2">
                       <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#3498db] text-right">あお(下):</span>
                       <div className="flex-1 flex gap-1 lg:gap-2">
-                        {[0, 1, 2, 3].map(num => (
+                        {[0, 2, 4, 6].map(num => (
                           <button
                             key={`p1-han-${num}`}
                             onClick={() => setSettings({ ...settings, p1Handicap: num })}
@@ -800,7 +805,7 @@ const handleCardTap = (player, cardId) => {
                     <div className="flex items-center gap-2">
                       <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#ff6b6b] text-right">あか(上):</span>
                       <div className="flex-1 flex gap-1 lg:gap-2">
-                        {[0, 1, 2, 3].map(num => (
+                        {[0, 2, 4, 6].map(num => (
                           <button
                             key={`p2-han-${num}`}
                             onClick={() => setSettings({ ...settings, p2Handicap: num })}
