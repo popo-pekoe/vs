@@ -1,0 +1,1 @@
+G:\Dropbox\data\!git_hub\vs\hayagoshi-app> npm run deploy

@@ -1,25 +1,7 @@
+// Version: 1.10
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
-// ====== src/App.jsx の最上部（import文の下）に貼り付けてください ======
-
-// ★ここにカテゴリ一覧のデータを定義します★
-// メニュー画面でボタンを描画するために使います。
-const CATEGORIES = [
-  { id: 'hiragana', icon: '🇯🇵', label: 'ひらがな', color: 'bg-red-400' },
-  { id: 'katakana', icon: '🅰️', label: 'カタカナ', color: 'bg-pink-400' },
-  { id: 'english', icon: '🇺🇸', label: 'えいご', color: 'bg-blue-400' },
-  { id: 'number', icon: '🔟', label: 'すうじ', color: 'bg-green-400' },
-  { id: 'color', icon: '🎨', label: 'いろ', color: 'bg-yellow-400' },
-  { id: 'shape', icon: '⭐', label: 'かたち', color: 'bg-purple-400' },
-  { id: 'mix', icon: '🔄', label: 'ミックス', color: 'bg-slate-400' },
-];
-
-// メニュー UI コードで使っている変数を定義します。
-// カテゴリのリストをそのまま渡します。
-const displayedCategories = CATEGORIES;
-
-// ==============================================================
 
 // --- 辞書データと設定 ---
 const WORD_DICT = {
@@ -87,13 +69,29 @@ const WORD_DICT = {
     { id: 'c_purple', char: 'purple', displayClass: 'bg-purple-500', speechJa: 'むらさき', speechEn: 'Purple' },
   ],
   shape: [
-    { id: 's_circle', char: 'circle', display: '🔴', speechJa: 'まる', speechEn: 'Circle' },
-    { id: 's_triangle', char: 'triangle', display: '🔺', speechJa: 'さんかく', speechEn: 'Triangle' },
-    { id: 's_square', char: 'square', display: '🟥', speechJa: 'しかく', speechEn: 'Square' },
-    { id: 's_star', char: 'star', display: '⭐', speechJa: 'ほし', speechEn: 'Star' },
-    { id: 's_heart', char: 'heart', display: '💖', speechJa: 'ハート', speechEn: 'Heart' },
+    { id: 's_circle', char: 'circle', display: '●', speechJa: 'まる', speechEn: 'Circle' },
+    { id: 's_triangle', char: 'triangle', display: '▲', speechJa: 'さんかく', speechEn: 'Triangle' },
+    { id: 's_square', char: 'square', display: '■', speechJa: 'しかく', speechEn: 'Square' },
+    { id: 's_star', char: 'star', display: '★', speechJa: 'ほし', speechEn: 'Star' },
+    { id: 's_heart', char: 'heart', display: '♥', speechJa: 'ハート', speechEn: 'Heart' },
+    { id: 's_spade', char: 'spade', display: '♠', speechJa: 'スペード', speechEn: 'Spade' },
+    { id: 's_club', char: 'club', display: '♣', speechJa: 'クローバー', speechEn: 'Club' },
+    { id: 's_diamond', char: 'diamond', display: '♦', speechJa: 'ダイヤ', speechEn: 'Diamond' },
+    { id: 's_cloud', char: 'cloud', display: '☁', speechJa: 'くも', speechEn: 'Cloud', fixedColor: true },
+    { id: 's_umbrella', char: 'umbrella', display: '☂', speechJa: 'かさ', speechEn: 'Umbrella', fixedColor: true },
+    { id: 's_note', char: 'note', display: '♪', speechJa: 'おんぷ', speechEn: 'Music Note' },
+    { id: 's_moon', char: 'moon', display: '☾', speechJa: 'つき', speechEn: 'Moon' },
   ]
 };
+
+const COLOR_LIST = [
+  { id: 'red', nameJa: 'あか', class: 'text-red-500' },
+  { id: 'blue', nameJa: 'あお', class: 'text-blue-500' },
+  { id: 'yellow', nameJa: 'きいろ', class: 'text-yellow-400' },
+  { id: 'green', nameJa: 'みどり', class: 'text-green-500' },
+  { id: 'purple', nameJa: 'むらさき', class: 'text-purple-500' },
+  { id: 'pink', nameJa: 'ピンク', class: 'text-pink-500' },
+];
 
 // 日本語モードのカテゴリ
 const CATEGORIES_JA = [
@@ -103,7 +101,8 @@ const CATEGORIES_JA = [
   { id: 'number', label: 'すうじ', icon: '1️⃣', color: 'bg-amber-400' },
   { id: 'color', label: 'いろ', icon: '🎨', color: 'bg-pink-400' },
   { id: 'shape', label: 'かたち', icon: '⭐', color: 'bg-violet-400' },
-  { id: 'mix', label: 'ミックス', icon: '⚡', color: 'bg-fuchsia-400' }
+  { id: 'mix', label: 'ミックス', icon: '⚡', color: 'bg-fuchsia-400' },
+  { id: 'color_shape', label: 'いろ×もじ (むずかしい)', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
 // 英語モードのカテゴリ
@@ -112,7 +111,8 @@ const CATEGORIES_EN = [
   { id: 'number', label: 'Numbers', icon: '1️⃣', color: 'bg-amber-500' },
   { id: 'color', label: 'Colors', icon: '🎨', color: 'bg-pink-500' },
   { id: 'shape', label: 'Shapes', icon: '⭐', color: 'bg-violet-500' },
-  { id: 'mix', label: 'Mix', icon: '⚡', color: 'bg-fuchsia-500' }
+  { id: 'mix', label: 'Mix', icon: '⚡', color: 'bg-fuchsia-500' },
+  { id: 'color_shape', label: 'Color & Shape', icon: '🌈', color: 'bg-cyan-500' } // ←追加
 ];
 
 // 判定設定
@@ -126,7 +126,9 @@ const TEXT_COLORS = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-or
 export default function App() {
   const [gameState, setGameState] = useState('menu'); 
   const [isEnglishMode, setIsEnglishMode] = useState(false);
-  const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5 });
+  // ▼ ハンデ用の初期値を追加して上書き ▼
+  const [settings, setSettings] = useState({ category: 'hiragana', displayCount: 8, targetScore: 5, p1Handicap: 0, p2Handicap: 0 });
+
   
   const [cards, setCards] = useState([]); 
   const [cardPool, setCardPool] = useState([]);
@@ -172,7 +174,7 @@ export default function App() {
   // --- 英語モード切り替え時の自動調整 ---
   useEffect(() => {
     if (isEnglishMode) {
-      const validEnCats = ['alphabet', 'number', 'color', 'shape', 'mix'];
+      const validEnCats = ['alphabet', 'number', 'color', 'shape', 'mix', 'color_shape'];
       if (!validEnCats.includes(settings.category)) {
         setSettings(prev => ({ ...prev, category: 'alphabet' }));
       }
@@ -196,6 +198,8 @@ export default function App() {
     }
   }, [gameState, isEnglishMode]);
 
+
+  
   // --- 音声生成ロジック ---
   const stopSpeech = useCallback(() => {
     if (window.speechSynthesis) {
@@ -207,65 +211,84 @@ export default function App() {
     if (!card) return;
     stopSpeech();
 
-    const utterance = new SpeechSynthesisUtterance();
-    const useEnglish = isEnglishMode || card.type === 'alphabet';
-
-    if (useEnglish) {
-      utterance.lang = 'en-US';
-      utterance.rate = 0.8;
-      utterance.pitch = 1.2; 
-      let text = isRepeat ? 'Again. ' : 'Ready... ';
+    if (card.type === 'color_shape_target') {
+      const preamble = new SpeechSynthesisUtterance();
+      preamble.lang = 'ja-JP';
+      preamble.rate = 0.95;
+      preamble.text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
       
-      switch (card.type) {
-        case 'alphabet':
-          const words = WORD_DICT.alphabet[card.char];
-          text += `${card.char}... ${words.join(', ')}.`;
-          break;
-        case 'number':
-          text += `${card.char}.`;
-          break;
-        case 'color':
-        case 'shape':
-          text += `${card.speechEn}.`;
-          break;
-        default:
-          text += `${card.char}.`;
+      preamble.text += `${card.colorJa}、の、${card.speechJa}`;
+      window.speechSynthesis.speak(preamble);
+      return; 
+    }
+
+    // 英語モード、または日本語モードだけど「えいご」パネルの場合
+    const isEnglishCard = isEnglishMode || card.type === 'alphabet';
+
+    if (isEnglishCard) {
+      // 1. まず掛け声を喋る（モードに合わせて言語を変える）
+      const preamble = new SpeechSynthesisUtterance();
+      if (isEnglishMode) {
+        preamble.lang = 'en-US';
+        preamble.text = isRepeat ? 'Again. ' : 'Ready... ';
+        preamble.rate = 0.8;
+      } else {
+        preamble.lang = 'ja-JP';
+        preamble.text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
+        preamble.rate = 0.95;
       }
-      utterance.text = text;
+      window.speechSynthesis.speak(preamble);
+
+      // 2. 続けてネイティブの英語を発音する
+      const mainSpeech = new SpeechSynthesisUtterance();
+      mainSpeech.lang = 'en-US'; // 確実にネイティブエンジンを指定
+      mainSpeech.rate = 0.8;
+      mainSpeech.pitch = 1.2;
+      
+      let text = '';
+      if (card.type === 'alphabet') {
+        const words = WORD_DICT.alphabet[card.char];
+        text = `${card.char}... ${words.join(', ')}.`;
+      } else if (card.type === 'number') {
+        text = `${card.char}.`;
+      } else if (card.type === 'color' || card.type === 'shape') {
+        text = `${card.speechEn}.`;
+      }
+      mainSpeech.text = text;
+      
+      // 掛け声のあとに連続して再生されるように予約
+      window.speechSynthesis.speak(mainSpeech);
+
     } else {
+      // 純粋な日本語パネルの時
+      const utterance = new SpeechSynthesisUtterance();
       utterance.lang = 'ja-JP';
       utterance.rate = 0.95;
       utterance.pitch = 1.1;
       let text = isRepeat ? 'もういちど。' : 'いっせーのーで、';
       
-      switch (card.type) {
-        case 'hiragana':
-        case 'katakana':
-          text += `${card.word}、の、${card.char}`;
-          break;
-        case 'alphabet': 
-          const wordsJa = WORD_DICT.alphabet[card.char];
-          text += `${card.char}。${wordsJa[0]}。`; 
-          break;
-        case 'number':
-          text += `${card.char}`;
-          break;
-        case 'color':
-        case 'shape':
-          text += `${card.speechJa}`;
-          break;
-        default:
-          text = '';
+      if (card.type === 'hiragana' || card.type === 'katakana') {
+        text += `${card.word}、の、${card.char}`;
+      } else if (card.type === 'number') {
+        text += `${card.char}`;
+      } else if (card.type === 'color' || card.type === 'shape') {
+        text += `${card.speechJa}`;
       }
       utterance.text = text;
+      window.speechSynthesis.speak(utterance);
     }
-    window.speechSynthesis.speak(utterance);
   }, [isEnglishMode, stopSpeech]);
-
 
   // --- プール生成ロジック ---
   const generatePool = useCallback((category) => {
     let pool = [];
+
+      if (category === 'color_shape') {
+         // 新モードは専用にダミーのプール（ターン数分）だけ作る
+       for(let i=0; i<100; i++) pool.push({ id: `turn_${i}`, dummy: true });
+       return pool;
+    }
+
     let typesToUse = category === 'mix' 
       ? (isEnglishMode ? ['alphabet', 'number', 'color', 'shape'] : ['hiragana', 'katakana', 'alphabet', 'number', 'color', 'shape']) 
       : [category];
@@ -366,20 +389,100 @@ export default function App() {
     }, 2000);
   };
 
-  // --- 次のターン開始（補充） ---
+
+// --- 新モード用のカード一括生成ロジック ---
+  const generateColorShapeBoard = (displayCount) => {
+    // fixedColor のアイコン（絵文字表示で色が変わらないもの）は色違いを作らない
+    const getRandomShape = (colorableOnly = false) => {
+      const shapeList = colorableOnly ? WORD_DICT.shape.filter(s => !s.fixedColor) : WORD_DICT.shape;
+      return shapeList[Math.floor(Math.random() * shapeList.length)];
+    };
+
+    let nextCards = [];
+    const targetBase = getRandomShape(true); // 正解は色で区別できるアイコンのみ
+    const targetColor = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
+    
+    // 正解カード
+    const targetCard = {
+      id: `cs_target_${Date.now()}`,
+      type: 'color_shape_target',
+      char: targetBase.char,
+      speechJa: targetBase.speechJa,
+      display: targetBase.display,
+      colorJa: targetColor.nameJa,
+      colorClass: targetColor.class,
+      borderClass: targetColor.class.replace('text-', 'border-')
+    };
+
+    targetCard.x = findSafePosition(nextCards).x;
+    targetCard.y = findSafePosition(nextCards).y;
+    nextCards.push(targetCard);
+
+    // 引っかけカードを生成
+    while(nextCards.length < displayCount) {
+       const distColor = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
+       const distBase = getRandomShape();
+       
+       if (distColor.id === targetColor.id && distBase.char === targetBase.char) continue;
+       
+       let finalColor = distColor;
+       let finalBase = distBase;
+       if (Math.random() > 0.5) {
+           if (Math.random() > 0.5) finalColor = targetColor; 
+           else finalBase = targetBase;   
+       }
+
+       // 色が変わらないアイコンは盤面に1枚まで（色のバリエーションを作らない）
+       if (finalBase.fixedColor) {
+         if (nextCards.some(c => c.char === finalBase.char)) continue;
+       } else if (nextCards.some(c => c.char === finalBase.char && c.colorClass === finalColor.class)) {
+         // 盤面に同じ色×形が既にあればスキップ
+         continue;
+       }
+
+       const distCard = {
+         id: `cs_dist_${nextCards.length}_${Date.now()}`,
+         type: 'color_shape_dist',
+         char: finalBase.char,
+         display: finalBase.display,
+         colorClass: finalBase.fixedColor ? '' : finalColor.class,
+         borderClass: finalBase.fixedColor ? 'border-gray-300' : finalColor.class.replace('text-', 'border-')
+       };
+       const pos = findSafePosition(nextCards);
+       distCard.x = pos.x;
+       distCard.y = pos.y;
+       nextCards.push(distCard);
+    }
+    return { board: nextCards.sort(() => 0.5 - Math.random()), target: targetCard };
+  };
+
+  // --- 次のターン開始（補充とハンデ適用） ---
   const startNextTurn = (currentCards, currentPool, wasPenaltySkip = false) => {
     let nextCards = [...currentCards];
     let nextPool = [...currentPool];
+    let target = null; // targetの決定ロジックを分岐させるため変数化
 
-    // --- カード一気補充機能 (ディーラー: 4枚以下なら設定枚数まで補充) ---
-    if (nextCards.length <= 4 && nextPool.length > 0) {
-        while (nextCards.length < settings.displayCount && nextPool.length > 0) {
-            const newCard = nextPool.pop();
-            const pos = findSafePosition(nextCards);
-            const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
-            const borderClass = colorClass.replace('text-', 'border-');
-            nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
-        }
+    if (settings.category === 'color_shape') {
+       // 新モードの場合は毎回盤面を全リセットして新しく生成
+       const generated = generateColorShapeBoard(settings.displayCount);
+       nextCards = generated.board;
+       target = generated.target;
+       nextPool.pop(); // ターンを消費
+    } else {
+
+
+       if (nextCards.length <= 4 && nextPool.length > 0) {
+           while (nextCards.length < settings.displayCount && nextPool.length > 0) {
+               const newCard = nextPool.pop();
+               const pos = findSafePosition(nextCards);
+               const colorClass = TEXT_COLORS[nextCards.length % TEXT_COLORS.length];
+               const borderClass = colorClass.replace('text-', 'border-');
+               nextCards.push({ ...newCard, ...pos, colorClass, borderClass });
+           }
+       }
+       if (nextCards.length > 0) {
+           target = nextCards[Math.floor(Math.random() * nextCards.length)];
+       }
     }
 
     if (nextCards.length === 0) {
@@ -389,15 +492,57 @@ export default function App() {
 
     setCards(nextCards);
     setCardPool(nextPool);
-
-    const target = nextCards[Math.floor(Math.random() * nextCards.length)];
+    // ターゲットを直接指定
     setCurrentTarget(target);
-    setP1Message('');
-    setP2Message('');
     setIsQuestioning(true);
     firstTapPlayerRef.current = null;
     
-    startPenaltyCountdown();
+    // --- ハンデ適用処理 ---
+    if (settings.p1Handicap > 0) {
+      setP1Penalty(true);
+      setP1Message('ハンデ');
+      setP1PenaltyCount(settings.p1Handicap);
+      clearInterval(p1IntervalRef.current);
+      p1IntervalRef.current = setInterval(() => {
+        setP1PenaltyCount(prev => {
+          if (prev <= 1) {
+            clearInterval(p1IntervalRef.current);
+            setP1Penalty(false);
+            setP1Message('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setP1Penalty(false);
+      setP1Message('');
+      setP1PenaltyCount(0);
+      clearInterval(p1IntervalRef.current);
+    }
+
+    if (settings.p2Handicap > 0) {
+      setP2Penalty(true);
+      setP2Message('ハンデ');
+      setP2PenaltyCount(settings.p2Handicap);
+      clearInterval(p2IntervalRef.current);
+      p2IntervalRef.current = setInterval(() => {
+        setP2PenaltyCount(prev => {
+          if (prev <= 1) {
+            clearInterval(p2IntervalRef.current);
+            setP2Penalty(false);
+            setP2Message('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setP2Penalty(false);
+      setP2Message('');
+      setP2PenaltyCount(0);
+      clearInterval(p2IntervalRef.current);
+    }
 
     if (!wasPenaltySkip) {
         playSpeech(target);
@@ -406,37 +551,6 @@ export default function App() {
     }
   };
 
-  const startPenaltyCountdown = () => {
-    if (p1Penalty) {
-      setP1PenaltyCount(PENALTY_SECONDS);
-      clearInterval(p1IntervalRef.current);
-      p1IntervalRef.current = setInterval(() => {
-        setP1PenaltyCount(prev => {
-          if (prev <= 1) {
-            clearInterval(p1IntervalRef.current);
-            setP1Penalty(false); 
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    if (p2Penalty) {
-      setP2PenaltyCount(PENALTY_SECONDS);
-      clearInterval(p2IntervalRef.current);
-      p2IntervalRef.current = setInterval(() => {
-        setP2PenaltyCount(prev => {
-          if (prev <= 1) {
-            clearInterval(p2IntervalRef.current);
-            setP2Penalty(false); 
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-  };
 
   const resolveScore = (players, cardId) => {
     setIsQuestioning(false);
@@ -475,12 +589,22 @@ export default function App() {
     }
   };
 
-  const handleCardTap = (player, cardId) => {
+const handleCardTap = (player, cardId) => {
     if (gameState !== 'playing' || !isQuestioningRef.current || !currentTarget) return;
     if (player === 1 && (p1Penalty || p1PenaltyCount > 0)) return;
     if (player === 2 && (p2Penalty || p2PenaltyCount > 0)) return;
 
     if (cardId === currentTarget.id) {
+      // 誰かが正解した瞬間に、両者のペナルティを完全リセットして次へ
+      setP1Penalty(false);
+      setP2Penalty(false);
+      setP1PenaltyCount(0);
+      setP2PenaltyCount(0);
+      clearInterval(p1IntervalRef.current);
+      clearInterval(p2IntervalRef.current);
+      setP1Message('');
+      setP2Message('');
+
       if (!firstTapPlayerRef.current) {
         firstTapPlayerRef.current = player;
         tieTimerRef.current = setTimeout(() => {
@@ -493,186 +617,231 @@ export default function App() {
         resolveScore([1, 2], cardId); 
       }
     } else {
+      // --- おてつき時の処理 ---
       if (player === 1) {
         setP1Penalty(true);
         setP1Message('おてつき！');
+        setP1PenaltyCount(PENALTY_SECONDS); // その場ですぐに5秒カウント開始
+        clearInterval(p1IntervalRef.current);
+        p1IntervalRef.current = setInterval(() => {
+          setP1PenaltyCount(prev => {
+            if (prev <= 1) {
+              clearInterval(p1IntervalRef.current);
+              setP1Penalty(false);
+              setP1Message('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
         setP2Penalty(true);
         setP2Message('おてつき！');
+        setP2PenaltyCount(PENALTY_SECONDS);
+        clearInterval(p2IntervalRef.current);
+        p2IntervalRef.current = setInterval(() => {
+          setP2PenaltyCount(prev => {
+            if (prev <= 1) {
+              clearInterval(p2IntervalRef.current);
+              setP2Penalty(false);
+              setP2Message('');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
 
+      // 2人とも間違えた場合はペナルティなしで即座に次へ
       const bothPenalized = (player === 1 && (p2Penalty || p2PenaltyCount > 0)) || 
                             (player === 2 && (p1Penalty || p1PenaltyCount > 0));
 
       if (bothPenalized) {
         clearTimeout(tieTimerRef.current);
         setIsQuestioning(false);
-        setP1Message('');
-        setP2Message('');
 
-        setP1Penalty(true);
-        setP2Penalty(true);
-        
+        // 進行中のペナルティを両方ストップしてリセット
+        setP1Penalty(false);
+        setP2Penalty(false);
+        setP1PenaltyCount(0);
+        setP2PenaltyCount(0);
         clearInterval(p1IntervalRef.current);
         clearInterval(p2IntervalRef.current);
         
-        setP1PenaltyCount(PENALTY_SECONDS);
-        setP2PenaltyCount(PENALTY_SECONDS);
-        
-        let p1Finished = false;
-        let p2Finished = false;
+        setP1Message('ドロー！');
+        setP2Message('ドロー！');
 
-        const checkNextTurn = () => {
-             if(p1Finished && p2Finished && gameState === 'playing') {
-                 setTimeout(() => {
-                    startNextTurn(cardsRef.current, cardPoolRef.current, true);
-                 }, 500);
-             }
-        }
-
-        p1IntervalRef.current = setInterval(() => {
-            setP1PenaltyCount(prev => {
-                if(prev <= 1) {
-                    clearInterval(p1IntervalRef.current);
-                    setP1Penalty(false);
-                    p1Finished = true;
-                    checkNextTurn();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        p2IntervalRef.current = setInterval(() => {
-            setP2PenaltyCount(prev => {
-                if(prev <= 1) {
-                    clearInterval(p2IntervalRef.current);
-                    setP2Penalty(false);
-                    p2Finished = true;
-                    checkNextTurn();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        setTimeout(() => {
+           setP1Message('');
+           setP2Message('');
+           if (gameState === 'playing') {
+             startNextTurn(cardsRef.current, cardPoolRef.current, true);
+           }
+        }, 1500);
       }
     }
   };
 
-  // --- メニュー画面描画 ---
-  // ── メニュー画面 ──
+ // --- メニュー画面描画 ---
   if (gameState === 'menu') {
+    const displayedCategories = isEnglishMode ? CATEGORIES_EN : CATEGORIES_JA;
+
     return (
-      <div className="min-h-screen bg-cyan-400 flex items-center justify-center p-2 sm:p-4">
-        {/* 縦画面(スマホ/iPad縦)では flex-col で上下に、横画面では md:flex-row で左右に並べます */}
-        <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 w-full max-w-4xl shadow-xl flex flex-col md:flex-row gap-4 md:gap-8 max-h-[98vh] overflow-y-auto">
+      <div className="min-h-screen w-screen bg-[#0abde3] flex items-center justify-center p-2 sm:p-4 select-none font-sans touch-manipulation">
+        {/* max-h-[95vh] と overflow-y-auto で、どんな画面サイズでも確実にはみ出さずスクロール可能にします */}
+        <div className="bg-white/95 rounded-[30px] shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col lg:flex-row overflow-y-auto border-4 lg:border-8 border-white/50">
           
-          {/* ===== 左側（縦画面では上段）：カテゴリ ===== */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg md:text-xl font-bold text-slate-700">
-                {isEnglishMode ? 'Categories' : 'なにであそぶ？'}
+          {/* 左メニュー（カテゴリ）: 縦画面では上に配置し、2列にして高さを節約 */}
+          <div className="w-full lg:w-1/3 bg-[#f0f8ff] p-4 lg:p-6 flex flex-col border-b-4 lg:border-b-0 lg:border-r-4 border-gray-100 shrink-0">
+            <div className="flex justify-between items-center mb-3 lg:mb-6">
+              <h2 className="text-lg lg:text-2xl font-black text-gray-700 flex items-center">
+                🎈 {isEnglishMode ? 'Categories' : 'なにであそぶ？'}
               </h2>
               <button 
                 onClick={() => setIsEnglishMode(!isEnglishMode)}
-                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full text-xs md:text-sm font-semibold transition-colors"
+                className={`px-3 py-1 lg:px-4 lg:py-2 rounded-full font-bold text-xs lg:text-sm transition-colors shadow-sm active:scale-95 ${isEnglishMode ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
                 {isEnglishMode ? '日本語' : 'English Mode'}
               </button>
             </div>
             
-            {/* カテゴリボタンを縦画面では2列にして高さをコンパクトに */}
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-2 flex-1 overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-3 flex-1">
               {displayedCategories.map(cat => (
                 <button
                   key={cat.id}
-                  onClick={() => setSettings(prev => ({ ...prev, category: cat.id }))}
-                  className={`relative p-2 md:p-3 rounded-xl text-left font-bold text-sm md:text-base transition-all shadow-sm active:scale-95 flex items-center gap-2 ${
+                  onClick={() => setSettings({ ...settings, category: cat.id })}
+                  className={`relative px-3 py-2 lg:px-6 lg:py-4 rounded-xl lg:rounded-2xl font-black text-sm lg:text-2xl text-left transition-all flex items-center ${
                     settings.category === cat.id 
-                      ? `${cat.color} text-white shadow-md transform scale-[1.02]` 
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                      ? `${cat.color} text-white shadow-[0_4px_0_rgba(0,0,0,0.2)] translate-y-[-2px]` 
+                      : 'bg-white text-gray-600 shadow-[0_2px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0] hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-lg md:text-2xl">{cat.icon}</span>
+                  <span className="mr-2 lg:mr-3 text-lg lg:text-2xl">{cat.icon}</span>
                   {cat.label}
-                  {settings.category === cat.id && (
-                    <div className="absolute right-2 md:right-3 w-2 h-2 md:w-3 md:h-3 bg-white rounded-full"></div>
-                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ===== 右側（縦画面では下段）：設定とスタート ===== */}
-          <div className="flex-1 flex flex-col justify-center gap-4 md:gap-6 bg-slate-50 rounded-xl md:rounded-2xl p-4 md:p-6">
-            <div className="text-center space-y-2 md:space-y-4">
-              <h1 className="text-2xl md:text-4xl font-black text-red-500 tracking-wider">
-                {isEnglishMode ? 'QUICK TOUCH!' : 'はやおし タッチ！'}
+          {/* 右メニュー（設定・スタート） */}
+          <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
+            
+            {/* ▼ バージョン表記 (v1.10) ▼ */}
+            <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
+              v1.10
+            </div>
+
+            <div className="mb-4 lg:mb-0">
+              <h1 className="text-3xl lg:text-6xl font-black text-center mb-2 lg:mb-4 text-[#ff6b6b] drop-shadow-sm">
+                はやおし タッチ！
               </h1>
-              <p className="text-xs md:text-sm text-slate-500 font-medium">
-                {isEnglishMode ? 'Listen and touch quickly!' : 'おとをきいて、はやくタッチしよう！'}
+              <p className="text-xs lg:text-base text-center text-gray-500 font-bold mb-4 lg:mb-10">
+                おとをきいて、はやく タッチしよう！
               </p>
+
+              <div className="space-y-4 lg:space-y-8 max-w-lg mx-auto w-full">
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">がめんに だす まいすう</h3>
+                  <div className="flex gap-2 lg:gap-4">
+                    {[6, 8, 10].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setSettings({ ...settings, displayCount: num })}
+                        className={`flex-1 py-2 lg:py-3 rounded-xl lg:rounded-2xl font-black text-base lg:text-xl transition-all ${
+                          settings.displayCount === num 
+                            ? 'bg-[#1dd1a1] text-white shadow-[0_3px_0_#10ac84] lg:shadow-[0_4px_0_#10ac84]' 
+                            : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0]'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">ゴール (なんまいとる？)</h3>
+                  <div className="flex gap-2 lg:gap-4">
+                    {[5, 10, 15].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setSettings({ ...settings, targetScore: num })}
+                        className={`flex-1 py-2 lg:py-3 rounded-xl lg:rounded-2xl font-black text-base lg:text-xl transition-all ${
+                          settings.targetScore === num 
+                            ? 'bg-[#ff9f43] text-white shadow-[0_3px_0_#ee5253] lg:shadow-[0_4px_0_#ee5253]' 
+                            : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0] lg:shadow-[0_4px_0_#e2e8f0]'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+{/* --- ハンデ設定 --- */}
+                <div className="bg-gray-50 p-3 lg:p-6 rounded-2xl lg:rounded-3xl border-2 border-gray-100">
+                  <h3 className="text-sm lg:text-xl font-bold text-gray-700 mb-2 lg:mb-4 text-center">ハンデ (毎ターン待機)</h3>
+                  <div className="flex flex-col gap-2 lg:gap-4">
+                    {/* あお(下)チーム ハンデ */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#3498db] text-right">あお(下):</span>
+                      <div className="flex-1 flex gap-1 lg:gap-2">
+                        {[0, 2, 4, 6].map(num => (
+                          <button
+                            key={`p1-han-${num}`}
+                            onClick={() => setSettings({ ...settings, p1Handicap: num })}
+                            className={`flex-1 py-1 lg:py-2 rounded-lg lg:rounded-xl font-bold text-sm lg:text-lg transition-all ${
+                              settings.p1Handicap === num 
+                                ? 'bg-[#3498db] text-white shadow-[0_3px_0_#2980b9]' 
+                                : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0]'
+                            }`}
+                          >
+                            {num}秒
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* あか(上)チーム ハンデ */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#ff6b6b] text-right">あか(上):</span>
+                      <div className="flex-1 flex gap-1 lg:gap-2">
+                        {[0, 2, 4, 6].map(num => (
+                          <button
+                            key={`p2-han-${num}`}
+                            onClick={() => setSettings({ ...settings, p2Handicap: num })}
+                            className={`flex-1 py-1 lg:py-2 rounded-lg lg:rounded-xl font-bold text-sm lg:text-lg transition-all ${
+                              settings.p2Handicap === num 
+                                ? 'bg-[#ff6b6b] text-white shadow-[0_3px_0_#ee5253]' 
+                                : 'bg-white text-gray-500 shadow-[0_3px_0_#e2e8f0]'
+                            }`}
+                          >
+                            {num}秒
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
+              </div>
             </div>
 
-            <div className="space-y-4 w-full max-w-xs mx-auto">
-              {/* 表示枚数設定 */}
-              <div>
-                <label className="block text-center text-xs md:text-sm font-bold text-slate-600 mb-2">
-                  {isEnglishMode ? 'Cards on screen' : 'がめんにだす まいすう'}
-                </label>
-                <div className="flex gap-2">
-                  {[6, 8, 10].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setSettings(prev => ({ ...prev, displayCount: num }))}
-                      className={`flex-1 py-2 rounded-lg font-bold text-sm md:text-base transition-colors ${
-                        settings.displayCount === num ? 'bg-teal-500 text-white' : 'bg-white text-slate-600 shadow-sm'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* ゴール枚数設定 */}
-              <div>
-                <label className="block text-center text-xs md:text-sm font-bold text-slate-600 mb-2">
-                  {isEnglishMode ? 'Goal (Cards to win)' : 'ゴール（なんまいとる？）'}
-                </label>
-                <div className="flex gap-2">
-                  {[5, 10, 15].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setSettings(prev => ({ ...prev, targetScore: num }))}
-                      className={`flex-1 py-2 rounded-lg font-bold text-sm md:text-base transition-colors ${
-                        settings.targetScore === num ? 'bg-orange-400 text-white' : 'bg-white text-slate-600 shadow-sm'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="flex justify-center mt-4 lg:mt-8 pb-4 lg:pb-0">
+              <button 
+                onClick={startGame}
+                className="w-full max-w-md py-4 lg:py-6 bg-[#ff6b6b] text-white rounded-2xl lg:rounded-[32px] text-2xl lg:text-4xl font-black shadow-[0_6px_0_#ee5253] lg:shadow-[0_10px_0_#ee5253] active:shadow-none active:translate-y-[6px] lg:active:translate-y-[10px] transition-all flex items-center justify-center hover:bg-[#ff5252]"
+              >
+                <Play className="w-8 h-8 lg:w-10 lg:h-10 mr-2 lg:mr-4 fill-white" /> スタート！
+              </button>
             </div>
-
-            <button
-              onClick={startGame}
-              className="mt-2 md:mt-4 w-full bg-red-500 hover:bg-red-600 text-white text-xl md:text-2xl font-black py-3 md:py-4 rounded-xl md:rounded-2xl shadow-[0_4px_0_rgb(185,28,28)] active:shadow-[0_0px_0_rgb(185,28,28)] active:translate-y-1 transition-all flex items-center justify-center gap-2"
-            >
-              <Play className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" />
-              {isEnglishMode ? 'START!' : 'スタート！'}
-            </button>
           </div>
-
         </div>
       </div>
     );
   }
-
-  // --- カード描画 ---
+// --- カード描画 ---
   const PlayCard = ({ card, player }) => {
-    // プレイヤーによって配置の基準を変える（P1は上から、P2は下から指定することでY軸を完全に対称にする）
     const positionStyle = player === 1 
       ? { left: `${card.x}%`, top: `${card.y}%` } 
       : { left: `${card.x}%`, bottom: `${card.y}%` };
@@ -680,13 +849,9 @@ export default function App() {
     if (card.type === 'color') {
       return (
         <div 
-          onClick={() => handleCardTap(player, card.id)}
-          className={`absolute rounded-2xl shadow-[0_4px_0_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_rgba(0,0,0,0.15)] active:translate-y-1 flex items-center justify-center border-4 border-white ${card.displayClass}`}
-          style={{ 
-            ...positionStyle,
-            width: `${CARD_SIZE_PERCENT}%`, 
-            aspectRatio: '1/1'
-          }}
+          onPointerDown={() => handleCardTap(player, card.id)}
+          className={`absolute rounded-2xl shadow-[0_4px_0_rgba(0,0,0,0.15)] cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_rgba(0,0,0,0.15)] active:translate-y-1 flex items-center justify-center border-4 border-white touch-none ${card.displayClass}`}
+          style={{ ...positionStyle, width: `${CARD_SIZE_PERCENT}%`, aspectRatio: '1/1' }}
         />
       );
     }
@@ -695,13 +860,9 @@ export default function App() {
     
     return (
       <div 
-        onClick={() => handleCardTap(player, card.id)}
-        className={`absolute bg-white rounded-3xl shadow-[0_4px_0_#cbd5e1] border-2 flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_#cbd5e1] active:translate-y-1 hover:scale-105 ${card.borderClass}`}
-        style={{ 
-          ...positionStyle,
-          width: `${CARD_SIZE_PERCENT}%`, 
-          aspectRatio: '1/1'
-        }}
+        onPointerDown={() => handleCardTap(player, card.id)}
+        className={`absolute bg-white rounded-3xl shadow-[0_4px_0_#cbd5e1] border-2 flex items-center justify-center cursor-pointer transition-all duration-150 active:scale-95 active:shadow-[0_2px_0_#cbd5e1] active:translate-y-1 hover:scale-105 touch-none ${card.borderClass}`}
+        style={{ ...positionStyle, width: `${CARD_SIZE_PERCENT}%`, aspectRatio: '1/1' }}
       >
         <div className={`w-full h-full flex items-center justify-center p-1 ${rotationClass}`}>
           {card.type === 'shape' ? (
@@ -718,26 +879,20 @@ export default function App() {
   const p2Ratio = Math.min((scores[2] / settings.targetScore) * 60, 60);
 
   return (
-    <div className="h-screen w-screen bg-[#0abde3] flex flex-col overflow-hidden select-none font-sans touch-manipulation p-2 md:p-4 gap-2">
-      
-      {/* --- P2 (上側・赤) エリア --- */}
-      <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>
-        {p2Message && !p2PenaltyCount && (
+    <div className="h-screen w-screen bg-[#0abde3] flex flex-col overflow-hidden select-none font-sans touch-none overscroll-none p-2 md:p-4 gap-2">
+      <div className={`flex-1 relative rounded-3xl overflow-hidden border-4 border-white transition-colors duration-300 ${p2PenaltyCount > 0 ? 'bg-gray-400' : 'bg-[#fff5f5]'}`}>        {p2Message && !p2PenaltyCount && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div 
-              className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold animate-bounce"
-              style={{ transform: 'rotate(180deg)' }}
-            >
-              {p2Message}
+            {/* 回転用とアニメーション用のdivを分離して上書きを防ぐ */}
+            <div className="rotate-180">
+              <div className="bg-black/70 text-white px-8 py-4 rounded-full text-3xl font-bold animate-bounce">
+                {p2Message}
+              </div>
             </div>
           </div>
         )}
         {p2PenaltyCount > 0 && (
           <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div 
-              className="text-[#ff6b6b] text-9xl font-black drop-shadow-2xl"
-              style={{ transform: 'rotate(180deg)' }}
-            >
+            <div className="text-[#ff6b6b] text-9xl font-black drop-shadow-2xl rotate-180">
               {p2PenaltyCount}
             </div>
           </div>
