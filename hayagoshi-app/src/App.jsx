@@ -1,4 +1,4 @@
-// Version: 1.10
+// Version: 1.11
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Play, RefreshCw, Trophy, Volume2, ArrowLeft } from 'lucide-react';
 
@@ -726,9 +726,9 @@ const handleCardTap = (player, cardId) => {
           {/* 右メニュー（設定・スタート） */}
           <div className="w-full lg:w-2/3 p-4 lg:p-12 flex flex-col justify-center bg-white relative">
             
-            {/* ▼ バージョン表記 (v1.10) ▼ */}
+            {/* ▼ バージョン表記 (v1.11) ▼ */}
             <div className="absolute bottom-2 right-4 text-xs font-bold text-gray-400 select-none">
-              v1.10
+              v1.11
             </div>
 
             <div className="mb-4 lg:mb-0">
@@ -786,7 +786,7 @@ const handleCardTap = (player, cardId) => {
                     <div className="flex items-center gap-2">
                       <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#3498db] text-right">あお(下):</span>
                       <div className="flex-1 flex gap-1 lg:gap-2">
-                        {[0, 2, 4, 6].map(num => (
+                        {[0, 4, 6, 8].map(num => (
                           <button
                             key={`p1-han-${num}`}
                             onClick={() => setSettings({ ...settings, p1Handicap: num })}
@@ -805,7 +805,7 @@ const handleCardTap = (player, cardId) => {
                     <div className="flex items-center gap-2">
                       <span className="w-16 lg:w-24 text-xs lg:text-base font-bold text-[#ff6b6b] text-right">あか(上):</span>
                       <div className="flex-1 flex gap-1 lg:gap-2">
-                        {[0, 2, 4, 6].map(num => (
+                        {[0, 4, 6, 8].map(num => (
                           <button
                             key={`p2-han-${num}`}
                             onClick={() => setSettings({ ...settings, p2Handicap: num })}
